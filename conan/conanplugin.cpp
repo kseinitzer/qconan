@@ -95,7 +95,7 @@ namespace conan {
 
       auto prjTree = ProjectExplorer::ProjectTree::instance();
       connect(prjTree, &ProjectExplorer::ProjectTree::currentProjectChanged,
-          this, &conanPlugin::evaluateDependencies);
+          this, &conanPlugin::updateDepConnections);
 
       return true;
     }
@@ -115,9 +115,9 @@ namespace conan {
       return SynchronousShutdown;
     }
 
-    void conanPlugin::evaluateDependencies()
+    void conanPlugin::updateDepConnections()
     {
-      qDebug() << "evaluateDependency triggered!";
+      qDebug() << "update depConnections";
 
       for (const auto& con : _depConnections)
         disconnect(con);
@@ -129,21 +129,27 @@ namespace conan {
       {
         _depConnections.push_back(
             connect(project, &ProjectExplorer::Project::activeTargetChanged,
-                this, &conanPlugin::evaluateDependencies));
+                this, &conanPlugin::updateDepConnections));
         if (auto target = project->activeTarget(); target)
         {
           _depConnections.push_back(connect(target,
               &ProjectExplorer::Target::activeBuildConfigurationChanged, this,
-              &conanPlugin::evaluateDependencies));
+              &conanPlugin::updateDepConnections));
           if (auto buildConfig = target->activeBuildConfiguration();
               buildConfig)
           {
             _depConnections.push_back(connect(buildConfig,
                 &ProjectExplorer::BuildConfiguration::buildDirectoryChanged,
                 this, &conanPlugin::evaluateDependencies));
+            evaluateDependencies();
           }
         }
       }
+    }
+
+    void conanPlugin::evaluateDependencies()
+    {
+      qDebug() << "evaluateDependency triggered!";
 
       const QString buildPath = currentBuildDir();
       if (buildPath.isEmpty())

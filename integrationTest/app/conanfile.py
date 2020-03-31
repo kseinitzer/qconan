@@ -9,7 +9,7 @@ class AppConan(ConanFile):
     description = "Test Application package for integration test"
     settings = "os", "compiler", "build_type", "arch"
     generators = "cmake"
-    requires = "liba/0.0.1@ks/test"
+    requires = "liba/0.0.1@ks/test", "libb/0.0.1@ks/test"
     exports_sources = "src*"
 
     def build(self):

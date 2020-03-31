@@ -33,6 +33,8 @@ namespace conan {
       void extensionsInitialized();
       ShutdownFlag aboutToShutdown();
 
+      void updateDepConnections();
+
       ///
       /// Evaluate the dependency tree and set up the build directory
       ///
