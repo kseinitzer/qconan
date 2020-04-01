@@ -1,8 +1,8 @@
 #pragma once
 
 #include "conan_global.h"
-
 #include <QDir>
+#include <QFileSystemWatcher>
 #include <extensionsystem/iplugin.h>
 #include <projectexplorer/projecttree.h>
 
@@ -43,10 +43,13 @@ namespace conan {
       ///
       void evaluateDependencies();
 
+      QString conanFilePath() const;
+
     private:
       QString currentBuildDir() const;
 
     private:
+      QFileSystemWatcher _conanFileWatcher;
       QChar _pathSeparator;
       std::list< QMetaObject::Connection > _depConnections;
     };

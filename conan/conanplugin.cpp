@@ -97,6 +97,9 @@ namespace conan {
       connect(prjTree, &ProjectExplorer::ProjectTree::currentProjectChanged,
           this, &conanPlugin::updateDepConnections);
 
+      connect(&_conanFileWatcher, &QFileSystemWatcher::fileChanged, this,
+          &conanPlugin::evaluateDependencies);
+
       return true;
     }
 
@@ -167,10 +170,33 @@ namespace conan {
         return;
       }
 
-      const QString conanFilePath = QStringLiteral(
-          "/home/kseinitzer/prj/qconan/integrationTest/app/conanfile.py");
+      if (const QString conanPath = conanFilePath(); !conanPath.isEmpty())
+      {
+        _conanFileWatcher.addPath(conanPath);
+        const QVariantMap buildInfo = conanInstall(conanPath, buildPath);
+      }
+      return;
+    }
 
-      const QVariantMap buildInfo = conanInstall(conanFilePath, buildPath);
+    QString conanPlugin::conanFilePath() const
+    {
+
+      if (auto project =
+              ProjectExplorer::ProjectTree::instance()->currentProject();
+          project)
+      {
+        QDir rootDir(project->rootProjectDirectory().toString());
+        for (const auto& relPath :
+            {QStringLiteral("conanfile.py"), QStringLiteral("../conanfile.py")})
+        {
+          if (rootDir.exists(relPath))
+          {
+            qDebug() << "Found conanfile" << relPath;
+            return rootDir.filePath(relPath);
+          }
+        }
+      }
+      return {};
     }
 
     QString conanPlugin::currentBuildDir() const
