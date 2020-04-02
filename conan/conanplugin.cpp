@@ -14,6 +14,7 @@
 #include <coreplugin/coreconstants.h>
 #include <coreplugin/icontext.h>
 #include <coreplugin/icore.h>
+#include <coreplugin/messagemanager.h>
 #include <projectexplorer/buildconfiguration.h>
 #include <projectexplorer/kitinformation.h>
 #include <projectexplorer/kitmanager.h>
@@ -45,12 +46,13 @@ namespace conan {
     QVariantMap conanPlugin::conanInstall(
         const QString& pathToConanFile, const QDir& directory) const
     {
+      write(tr("Run conan install for >%1< in >%2<")
+                .arg(pathToConanFile)
+                .arg(directory.path()));
+
       const QString conanPath = QStringLiteral("conan");
       QStringList conanInstall = {QStringLiteral("install"), pathToConanFile,
           QStringLiteral("-g"), QStringLiteral("json")};
-
-      qInfo() << "Run conan install for " << pathToConanFile
-              << directory.path();
 
       Utils::SynchronousProcess process;
       process.setWorkingDirectory(directory.path());
@@ -65,7 +67,8 @@ namespace conan {
           directory.filePath(QStringLiteral("conanbuildinfo.json")));
       if (!buildInfo.open(QIODevice::ReadOnly))
       {
-        qDebug() << "could not open buildinfo " << buildInfo.fileName();
+        write(tr("Error, could not open buildinfo: %1")
+                  .arg(buildInfo.fileName()));
         return {};
       }
 
@@ -74,7 +77,8 @@ namespace conan {
 
       if (err.error != QJsonParseError::NoError)
       {
-        qDebug() << "Json Parse Error: " << err.errorString();
+        write(tr("Error, JSON file could not be parsed: %1")
+                  .arg(err.errorString()));
         return {};
       }
       return doc.object().toVariantMap();
@@ -206,6 +210,12 @@ namespace conan {
         }
       }
       return {};
+    }
+
+    void conanPlugin::write(const QString& text) const
+    {
+      auto messenger = Core::MessageManager::instance();
+      messenger->write(tr("conan plugin: %1").arg(text));
     }
 
     QString conanPlugin::currentBuildDir() const

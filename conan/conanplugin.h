@@ -48,6 +48,8 @@ namespace conan {
       QString conanFilePath() const;
 
     private:
+      void write(const QString& text) const;
+
       QString currentBuildDir() const;
 
     private:
