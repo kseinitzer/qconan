@@ -124,6 +124,17 @@ namespace conan {
 
     void conanPlugin::setNewProject(ProjectExplorer::Project* project)
     {
+      if (project)
+      {
+        const QString settingsPath =
+            QDir(project->projectDirectory().toString())
+                .filePath(QStringLiteral("qconan.ini"));
+        QSettings settings(settingsPath, QSettings::Format::IniFormat);
+
+        _config = PluginConfig(
+            settings.value(QStringLiteral("global/path"), QStringLiteral())
+                .toString());
+      }
       if (const auto path = conanFilePath(); !path.isEmpty())
       {
         _conanFileWatcher.removePaths(_conanFileWatcher.files());
@@ -193,6 +204,12 @@ namespace conan {
 
     QString conanPlugin::conanFilePath() const
     {
+      if (!_config.isAutoDetect())
+      {
+        if (QFileInfo(_config.conanFile()).exists())
+          return _config.conanFile();
+        return {};
+      }
 
       if (auto project =
               ProjectExplorer::ProjectTree::instance()->currentProject();

@@ -52,6 +52,27 @@ namespace conan {
 
       QString currentBuildDir() const;
 
+      class PluginConfig
+      {
+      private:
+        QString _conanFilePath;
+
+      public:
+        PluginConfig(const QString& path) : _conanFilePath {path} {}
+
+        bool isAutoDetect() const
+        {
+          return _conanFilePath.isEmpty();
+        }
+
+        QString conanFile() const
+        {
+          return _conanFilePath;
+        }
+      };
+
+      PluginConfig _config;
+
     private:
       QFileSystemWatcher _conanFileWatcher;
       QChar _pathSeparator;
