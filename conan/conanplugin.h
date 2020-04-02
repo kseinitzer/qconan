@@ -33,6 +33,8 @@ namespace conan {
       void extensionsInitialized();
       ShutdownFlag aboutToShutdown();
 
+      void setNewProject(ProjectExplorer::Project* project);
+
       void updateDepConnections();
 
       ///

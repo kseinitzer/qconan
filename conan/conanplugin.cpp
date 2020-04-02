@@ -95,7 +95,7 @@ namespace conan {
 
       auto prjTree = ProjectExplorer::ProjectTree::instance();
       connect(prjTree, &ProjectExplorer::ProjectTree::currentProjectChanged,
-          this, &conanPlugin::updateDepConnections);
+          this, &conanPlugin::setNewProject);
 
       connect(&_conanFileWatcher, &QFileSystemWatcher::fileChanged, this,
           &conanPlugin::evaluateDependencies);
@@ -116,6 +116,16 @@ namespace conan {
       // Disconnect from signals that are not needed during shutdown
       // Hide UI (if you add UI that is not in the main window directly)
       return SynchronousShutdown;
+    }
+
+    void conanPlugin::setNewProject(ProjectExplorer::Project* project)
+    {
+      if (const auto path = conanFilePath(); !path.isEmpty())
+      {
+        _conanFileWatcher.removePaths(_conanFileWatcher.files());
+        _conanFileWatcher.addPath(path);
+      }
+      updateDepConnections();
     }
 
     void conanPlugin::updateDepConnections()
@@ -172,7 +182,6 @@ namespace conan {
 
       if (const QString conanPath = conanFilePath(); !conanPath.isEmpty())
       {
-        _conanFileWatcher.addPath(conanPath);
         const QVariantMap buildInfo = conanInstall(conanPath, buildPath);
       }
       return;
