@@ -137,6 +137,11 @@ namespace conan {
                 .filePath(QStringLiteral("qconan.ini"));
         QSettings settings(settingsPath, QSettings::Format::IniFormat);
 
+        if (QFileInfo(settingsPath).exists())
+        {
+          write(tr("Found settings file"));
+        }
+
         _config = PluginConfig(
             settings.value(QStringLiteral("global/path")).toString(),
             settings.value(QStringLiteral("global/installFlags")).toString());
