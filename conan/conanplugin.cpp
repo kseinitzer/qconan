@@ -46,13 +46,19 @@ namespace conan {
     QVariantMap conanPlugin::conanInstall(
         const QString& pathToConanFile, const QDir& directory) const
     {
-      write(tr("Run conan install for >%1< in >%2<")
-                .arg(pathToConanFile)
-                .arg(directory.path()));
-
       const QString conanPath = QStringLiteral("conan");
       QStringList conanInstall = {QStringLiteral("install"), pathToConanFile,
           QStringLiteral("-g"), QStringLiteral("json")};
+
+      if (!_config.installFlags().isEmpty())
+      {
+        conanInstall.push_back(_config.installFlags());
+      }
+
+      write(tr("Run conan %1 for >%2< in >%3<")
+                .arg(conanInstall.join(" "))
+                .arg(pathToConanFile)
+                .arg(directory.path()));
 
       Utils::SynchronousProcess process;
       process.setWorkingDirectory(directory.path());
@@ -132,8 +138,8 @@ namespace conan {
         QSettings settings(settingsPath, QSettings::Format::IniFormat);
 
         _config = PluginConfig(
-            settings.value(QStringLiteral("global/path"), QStringLiteral())
-                .toString());
+            settings.value(QStringLiteral("global/path")).toString(),
+            settings.value(QStringLiteral("global/installFlags")).toString());
       }
       if (const auto path = conanFilePath(); !path.isEmpty())
       {

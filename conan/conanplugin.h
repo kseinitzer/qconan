@@ -56,9 +56,14 @@ namespace conan {
       {
       private:
         QString _conanFilePath;
+        QString _installFlags;
 
       public:
-        PluginConfig(const QString& path) : _conanFilePath {path} {}
+        PluginConfig() = default;
+        PluginConfig(const QString& path, const QString& installFlags)
+            : _conanFilePath {path}, _installFlags {installFlags}
+        {
+        }
 
         bool isAutoDetect() const
         {
@@ -68,6 +73,11 @@ namespace conan {
         QString conanFile() const
         {
           return _conanFilePath;
+        }
+
+        QString installFlags() const
+        {
+          return _installFlags;
         }
       };
 
