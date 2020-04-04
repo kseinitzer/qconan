@@ -176,8 +176,6 @@ namespace conan {
 
     void conanPlugin::updateDepConnections()
     {
-      qDebug() << "update depConnections";
-
       removeDepConnections();
 
       auto tree = ProjectExplorer::ProjectTree::instance();
@@ -214,16 +212,15 @@ namespace conan {
       const QString buildPath = currentBuildDir();
       if (buildPath.isEmpty())
       {
-        qWarning() << "No valid build directory available. Abort conan "
-                      "dependency discovery";
+        write(tr("No valid build directory available. Abort set up build "
+                 "directory!"));
         return;
       }
 
       QDir buildDir;
       if (!buildDir.mkpath(buildPath))
       {
-        qCritical() << "Unable to create directory. Please check access rights!"
-                    << buildPath;
+        write(tr("Unable to create directory >%1<.").arg(buildPath));
         return;
       }
 
@@ -255,7 +252,7 @@ namespace conan {
         {
           if (rootDir.exists(relPath))
           {
-            qDebug() << "Found conanfile" << relPath;
+            write(tr("Found conanfile at >%1<").arg(relPath));
             return rootDir.filePath(relPath);
           }
         }
