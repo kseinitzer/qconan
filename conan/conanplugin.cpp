@@ -44,7 +44,7 @@ namespace conan {
     }
 
     QVariantMap conanPlugin::conanInstall(
-        const QString& pathToConanFile, const QDir& directory) const
+        const QString& pathToConanFile, const QDir& directory)
     {
       const QString conanPath = QStringLiteral("conan");
       QStringList conanInstall = {QStringLiteral("install"), pathToConanFile,
@@ -69,6 +69,7 @@ namespace conan {
       if (response.result != Utils::SynchronousProcessResponse::Finished)
         return {};
 
+      _lastInstallDir = directory.canonicalPath();
       QFile buildInfo(
           directory.filePath(QStringLiteral("conanbuildinfo.json")));
       if (!buildInfo.open(QIODevice::ReadOnly))
@@ -108,7 +109,7 @@ namespace conan {
           this, &conanPlugin::setNewProject);
 
       connect(&_conanFileWatcher, &QFileSystemWatcher::fileChanged, this,
-          &conanPlugin::evaluateDependencies);
+          &conanPlugin::setupBuildDirForce);
 
       return true;
     }
@@ -179,17 +180,20 @@ namespace conan {
           {
             _depConnections.push_back(connect(buildConfig,
                 &ProjectExplorer::BuildConfiguration::buildDirectoryChanged,
-                this, &conanPlugin::evaluateDependencies));
-            evaluateDependencies();
+                this, &conanPlugin::setupBuildDirForce));
+            setupBuildDir(false);
           }
         }
       }
     }
 
-    void conanPlugin::evaluateDependencies()
+    void conanPlugin::setupBuildDirForce()
     {
-      qDebug() << "evaluateDependency triggered!";
+      setupBuildDir(true);
+    }
 
+    void conanPlugin::setupBuildDir(bool forceInstall)
+    {
       const QString buildPath = currentBuildDir();
       if (buildPath.isEmpty())
       {
@@ -206,7 +210,9 @@ namespace conan {
         return;
       }
 
-      if (const QString conanPath = conanFilePath(); !conanPath.isEmpty())
+      if (const QString conanPath = conanFilePath();
+          !conanPath.isEmpty() &&
+          (forceInstall == true || _lastInstallDir != buildPath))
       {
         const QVariantMap buildInfo = conanInstall(conanPath, buildPath);
       }
