@@ -123,8 +123,17 @@ namespace conan {
 
     ExtensionSystem::IPlugin::ShutdownFlag conanPlugin::aboutToShutdown()
     {
-      // Save settings
-      // Disconnect from signals that are not needed during shutdown
+      disconnect(ProjectExplorer::ProjectTree::instance(),
+          &ProjectExplorer::ProjectTree::currentProjectChanged, this,
+          &conanPlugin::setNewProject);
+
+      disconnect(&_conanFileWatcher, &QFileSystemWatcher::fileChanged, this,
+          &conanPlugin::setupBuildDirForce);
+
+      for (const auto& con : _depConnections)
+        disconnect(con);
+      _depConnections.clear();
+
       // Hide UI (if you add UI that is not in the main window directly)
       return SynchronousShutdown;
     }
@@ -158,13 +167,18 @@ namespace conan {
       updateDepConnections();
     }
 
+    void conanPlugin::removeDepConnections()
+    {
+      for (const auto& con : _depConnections)
+        disconnect(con);
+      _depConnections.clear();
+    }
+
     void conanPlugin::updateDepConnections()
     {
       qDebug() << "update depConnections";
 
-      for (const auto& con : _depConnections)
-        disconnect(con);
-      _depConnections.clear();
+      removeDepConnections();
 
       auto tree = ProjectExplorer::ProjectTree::instance();
 
