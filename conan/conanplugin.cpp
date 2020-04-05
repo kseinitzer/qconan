@@ -7,7 +7,6 @@
 #include <QMainWindow>
 #include <QMenu>
 #include <QMessageBox>
-#include <QTemporaryDir>
 #include <coreplugin/actionmanager/actioncontainer.h>
 #include <coreplugin/actionmanager/actionmanager.h>
 #include <coreplugin/actionmanager/command.h>
@@ -46,7 +45,7 @@ namespace conan {
     QVariantMap conanPlugin::conanInstall(
         const QString& pathToConanFile, const QDir& directory)
     {
-      const QString conanPath = QStringLiteral("conan");
+      const QString conanBinPath = QStringLiteral("conan");
       QStringList conanInstall = {QStringLiteral("install"), pathToConanFile,
           QStringLiteral("-g"), QStringLiteral("json")};
 
@@ -65,11 +64,12 @@ namespace conan {
       process.setTimeoutS(5); // TODO: Must run completly asynchron because
                               // downloads may take a lot of time
       Utils::SynchronousProcessResponse response =
-          process.runBlocking({conanPath, conanInstall});
+          process.runBlocking({conanBinPath, conanInstall});
       if (response.result != Utils::SynchronousProcessResponse::Finished)
         return {};
 
       _lastInstallDir = directory.canonicalPath();
+
       QFile buildInfo(
           directory.filePath(QStringLiteral("conanbuildinfo.json")));
       if (!buildInfo.open(QIODevice::ReadOnly))
@@ -104,9 +104,9 @@ namespace conan {
       Q_UNUSED(arguments)
       Q_UNUSED(errorString)
 
-      auto prjTree = ProjectExplorer::ProjectTree::instance();
-      connect(prjTree, &ProjectExplorer::ProjectTree::currentProjectChanged,
-          this, &conanPlugin::setNewProject);
+      connect(ProjectExplorer::ProjectTree::instance(),
+          &ProjectExplorer::ProjectTree::currentProjectChanged, this,
+          &conanPlugin::setNewProject);
 
       connect(&_conanFileWatcher, &QFileSystemWatcher::fileChanged, this,
           &conanPlugin::setupBuildDirForce);
@@ -123,30 +123,42 @@ namespace conan {
 
     ExtensionSystem::IPlugin::ShutdownFlag conanPlugin::aboutToShutdown()
     {
-      // Save settings
-      // Disconnect from signals that are not needed during shutdown
+      disconnect(ProjectExplorer::ProjectTree::instance(),
+          &ProjectExplorer::ProjectTree::currentProjectChanged, this,
+          &conanPlugin::setNewProject);
+
+      disconnect(&_conanFileWatcher, &QFileSystemWatcher::fileChanged, this,
+          &conanPlugin::setupBuildDirForce);
+
+      for (const auto& con : _depConnections)
+        disconnect(con);
+      _depConnections.clear();
+
       // Hide UI (if you add UI that is not in the main window directly)
       return SynchronousShutdown;
     }
 
     void conanPlugin::setNewProject(ProjectExplorer::Project* project)
     {
-      if (project)
+      if (project == nullptr)
       {
-        const QString settingsPath =
-            QDir(project->projectDirectory().toString())
-                .filePath(QStringLiteral("qconan.ini"));
-        QSettings settings(settingsPath, QSettings::Format::IniFormat);
-
-        if (QFileInfo(settingsPath).exists())
-        {
-          write(tr("Found settings file"));
-        }
-
-        _config = PluginConfig(
-            settings.value(QStringLiteral("global/path")).toString(),
-            settings.value(QStringLiteral("global/installFlags")).toString());
+        removeDepConnections();
+        return;
       }
+
+      const QString settingsPath = QDir(project->projectDirectory().toString())
+                                       .filePath(QStringLiteral("qconan.ini"));
+      QSettings settings(settingsPath, QSettings::Format::IniFormat);
+
+      if (QFileInfo(settingsPath).exists())
+      {
+        write(tr("Found settings file"));
+      }
+
+      _config =
+          PluginConfig(settings.value(QStringLiteral("global/path")).toString(),
+              settings.value(QStringLiteral("global/installFlags")).toString());
+
       if (const auto path = conanFilePath(); !path.isEmpty())
       {
         _conanFileWatcher.removePaths(_conanFileWatcher.files());
@@ -155,13 +167,16 @@ namespace conan {
       updateDepConnections();
     }
 
-    void conanPlugin::updateDepConnections()
+    void conanPlugin::removeDepConnections()
     {
-      qDebug() << "update depConnections";
-
       for (const auto& con : _depConnections)
         disconnect(con);
       _depConnections.clear();
+    }
+
+    void conanPlugin::updateDepConnections()
+    {
+      removeDepConnections();
 
       auto tree = ProjectExplorer::ProjectTree::instance();
 
@@ -197,16 +212,15 @@ namespace conan {
       const QString buildPath = currentBuildDir();
       if (buildPath.isEmpty())
       {
-        qWarning() << "No valid build directory available. Abort conan "
-                      "dependency discovery";
+        write(tr("No valid build directory available. Abort set up build "
+                 "directory!"));
         return;
       }
 
       QDir buildDir;
       if (!buildDir.mkpath(buildPath))
       {
-        qCritical() << "Unable to create directory. Please check access rights!"
-                    << buildPath;
+        write(tr("Unable to create directory >%1<.").arg(buildPath));
         return;
       }
 
@@ -238,7 +252,7 @@ namespace conan {
         {
           if (rootDir.exists(relPath))
           {
-            qDebug() << "Found conanfile" << relPath;
+            write(tr("Found conanfile at >%1<").arg(relPath));
             return rootDir.filePath(relPath);
           }
         }

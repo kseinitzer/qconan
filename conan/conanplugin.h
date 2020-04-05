@@ -35,6 +35,7 @@ namespace conan {
 
       void setNewProject(ProjectExplorer::Project* project);
 
+      void removeDepConnections();
       void updateDepConnections();
 
       ///
