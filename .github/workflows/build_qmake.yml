@@ -3,10 +3,10 @@ name: QMake Build Matrix
 on: [push]
 
 env:
-  QT_VERSION: 5.14.0
-  QT_CREATOR_VERSION: 4.11.0
-  PLUGIN_PRO: doxygen.pro
-  PLUGIN_NAME: Doxygen
+  QT_VERSION: 5.12.4
+  QT_CREATOR_VERSION: 4.8.2
+  PLUGIN_PRO: conan.pro
+  PLUGIN_NAME: conan
 
 jobs:
   build:
@@ -120,9 +120,9 @@ jobs:
           set(qtc_output_directory "qtcreator/lib/qtcreator/plugins")
           set(qtc_binary_name "$ENV{PLUGIN_NAME}4.dll")
           if ("${{ matrix.config.environment_script }}" MATCHES "vcvars64.bat")
-            set(qtc_platform "windows_msvc2017_x64")
+            set(qtc_platform "windows_vs2015_64")
           elseif ("${{ matrix.config.environment_script }}" MATCHES "vcvars32.bat")
-            set(qtc_platform "windows_msvc2017_x86")
+            set(qtc_platform "windows_vs2015_32")
           endif()
         elseif ("${{ runner.os }}" STREQUAL "Linux")
           set(qtc_output_directory "qtcreator/lib/qtcreator/plugins")
@@ -181,8 +181,8 @@ jobs:
           COMMAND ${{ steps.qt.outputs.qt_dir }}/bin/qmake
             $ENV{PLUGIN_PRO}
             CONFIG+=release
-            QTC_SOURCE="${qtcreator_dir}"
-            QTC_BUILD="${qtcreator_dir}"
+            IDE_SOURCE_TREE="${qtcreator_dir}"
+            IDE_BUILD_TREE="${qtcreator_dir}"
           RESULT_VARIABLE result
         )
         if (NOT result EQUAL 0)

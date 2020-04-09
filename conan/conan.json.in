@@ -1,11 +1,11 @@
 {
     \"Name\" : \"conan\",
-    \"Version\" : \"0.0.1\",
-    \"CompatVersion\" : \"0.0.1\",
-    \"Vendor\" : \"freifallzeit\",
+    \"Version\" : \"0.1.0\",
+    \"CompatVersion\" : \"0.1.0\",
+    \"Vendor\" : \"Kurt Seinitzer\",
     \"Copyright\" : \"(c) Kurt Seinitzer\",
     \"License\" : \"LGPL\",
-    \"Description\" : \"Conan integration\",
-    \"Url\" : \"https://www.freifallzeit.at\",
+    \"Description\" : \"Conan dependency manager integration\",
+    \"Url\" : \"https://github.com/kseinitzer/qconan\",
     $$dependencyList
 }
