@@ -109,6 +109,11 @@ jobs:
         string(REPLACE "licheck_mac" "" qtconfig "${qtconfig}")
         file(WRITE "qt5/${qt_dir_prefix}/mkspecs/qconfig.pri" "${qtconfig}")
 
+        # Create qt.conf with the correct path to the Qt Install dir:
+        configure_file(qt.conf.in ${qt_dir}/bin/qt.conf)
+
+
+
     - name: Download Qt Creator
       id: qt_creator
       shell: cmake -P {0}
