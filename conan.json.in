@@ -1,0 +1,11 @@
+{
+    \"Name\" : \"conan\",
+    \"Version\" : \"0.1.0\",
+    \"CompatVersion\" : \"0.1.0\",
+    \"Vendor\" : \"Kurt Seinitzer\",
+    \"Copyright\" : \"(c) Kurt Seinitzer\",
+    \"License\" : \"LGPL\",
+    \"Description\" : \"Conan dependency manager integration\",
+    \"Url\" : \"https://github.com/kseinitzer/qconan\",
+    $$dependencyList
+}
