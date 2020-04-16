@@ -3,8 +3,6 @@ name: QMake Build Matrix
 on: [push]
 
 env:
-  QT_VERSION: 5.12.4
-  QT_CREATOR_VERSION: 4.8.2
   PLUGIN_PRO: conan.pro
   PLUGIN_NAME: conan
 
@@ -14,23 +12,33 @@ jobs:
     runs-on: ${{ matrix.config.os }}
     strategy:
       matrix:
+        support:
+        - {
+            qt_version: 5.12.4,
+            creator_version: 4.8.2
+          }
+
         config:
         - {
-            name: "Windows Latest x64", artifact: "Windows-x64.zip",
+            name: "Windows Latest x64",
+            artifact: "Windows-x64.zip",
             os: windows-latest,
             environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
           }
         - {
-            name: "Windows Latest x86", artifact: "Windows-x86.zip",
+            name: "Windows Latest x86",
+            artifact: "Windows-x86.zip",
             os: windows-latest,
             environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars32.bat"
           }
         - {
-            name: "Linux Latest x64", artifact: "Linux-x64.zip",
+            name: "Linux Latest x64",
+            artifact: "Linux-x64.zip",
             os: ubuntu-latest
           }
         - {
-            name: "macOS Latest x64", artifact: "macOS-x64.zip",
+            name: "macOS Latest x64",
+            artifact: "macOS-x64.zip",
             os: macos-latest
           }
 
@@ -50,7 +58,7 @@ jobs:
       id: qt
       shell: cmake -P {0}
       run: |
-        set(qt_version $ENV{QT_VERSION})
+        set(qt_version ${{ matrix.support.qt_version}})
 
         string(REPLACE "." "" qt_version_dotless "${qt_version}")
         if ("${{ runner.os }}" STREQUAL "Windows")
@@ -118,8 +126,8 @@ jobs:
       id: qt_creator
       shell: cmake -P {0}
       run: |
-        string(REGEX MATCH "([0-9]+.[0-9]+).[0-9]+" outvar "$ENV{QT_CREATOR_VERSION}")
-        set(qtc_base_url "https://download.qt.io/official_releases/qtcreator/${CMAKE_MATCH_1}/$ENV{QT_CREATOR_VERSION}")
+        string(REGEX MATCH "([0-9]+.[0-9]+).[0-9]+" outvar "${{matrix.support.qt_version}}")
+        set(qtc_base_url "https://download.qt.io/official_releases/qtcreator/${CMAKE_MATCH_1}/${{matrix.support.qt_version}}")
 
         if ("${{ runner.os }}" STREQUAL "Windows")
           set(qtc_output_directory "qtcreator/lib/qtcreator/plugins")
@@ -220,7 +228,7 @@ jobs:
           message(FATAL_ERROR "Bad exit status")
         endif()
 
-        file(TO_CMAKE_PATH "$ENV{GITHUB_WORKSPACE}/$ENV{PLUGIN_NAME}-$ENV{QT_CREATOR_VERSION}-${{ matrix.config.artifact }}" artifact)
+        file(TO_CMAKE_PATH "$ENV{GITHUB_WORKSPACE}/$ENV{PLUGIN_NAME}-${{matrix.support.qt_version}}-${{ matrix.config.artifact }}" artifact)
 
         execute_process(COMMAND
           ${CMAKE_COMMAND} -E tar cvf ${artifact} --format=zip "${{ steps.qt_creator.outputs.qtc_binary_name }}"
@@ -230,8 +238,8 @@ jobs:
     - uses: actions/upload-artifact@v1
       id: upload_artifact
       with:
-        path: ./${{ env.PLUGIN_NAME }}-${{ env.QT_CREATOR_VERSION }}-${{ matrix.config.artifact }}
-        name: ${{ env.PLUGIN_NAME}}-${{ env.QT_CREATOR_VERSION }}-${{ matrix.config.artifact }}
+        path: ./${{ env.PLUGIN_NAME }}-${{matrix.support.qt_version}}-${{ matrix.config.artifact }}
+        name: ${{ env.PLUGIN_NAME}}-${{matrix.support.qt_version}}-${{ matrix.config.artifact }}
 
   release:
     if: contains(github.ref, 'tags/v')
@@ -289,7 +297,7 @@ jobs:
     - name: Download artifact
       uses: actions/download-artifact@v1
       with:
-        name: ${{ env.PLUGIN_NAME }}-${{ env.QT_CREATOR_VERSION }}-${{ matrix.config.artifact }}
+        name: ${{ env.PLUGIN_NAME }}-${{matrix.support.qt_version}}-${{ matrix.config.artifact }}
         path: ./
 
     - name: Download URL
@@ -309,6 +317,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.set_upload_url.outputs.upload_url }}
-        asset_path: ./${{ env.PLUGIN_NAME }}-${{ env.QT_CREATOR_VERSION }}-${{ matrix.config.artifact }}
-        asset_name: ${{ env.PLUGIN_NAME }}-${{ env.QT_CREATOR_VERSION }}-${{ matrix.config.artifact }}
+        asset_path: ./${{ env.PLUGIN_NAME }}-${{matrix.support.qt_version}}-${{ matrix.config.artifact }}
+        asset_name: ${{ env.PLUGIN_NAME }}-${{matrix.support.qt_version}}-${{ matrix.config.artifact }}
         asset_content_type: application/zip
