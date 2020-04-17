@@ -8,71 +8,27 @@ env:
 
 jobs:
   build:
-    name: ${{ matrix.config.name }}_${{matrix.support.creator_version}}
-    runs-on: ${{ matrix.config.os }}
+    name: ${{matrix.creator_version}}_${{matrix.toolchain}}
+    runs-on: if (matrix.toolchain == mac64) return macos-latest if (matrix.toolchain == linux64) return ubuntu-latest
     continue-on-error: true
     strategy:
       matrix:
-        support:
-        - {
-            qt_version: 5.12.4,
-            creator_version: 4.8.2,
-            not_supported_platforms: ["windows_msvc2017_x64", "windows_msvc2017_x86"]
-          }
-        - {
-            qt_version: 5.13.1,
-            creator_version: 4.10.1,
-            not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32"]
-          }
-
-        config:
-        - {
-            name: "Windows Latest x64 VS2015",
-            artifact: "Windows-x64.zip",
-            os: windows-latest,
-            platform: "windows_vs2015_64",
-            environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
-          }
-        - {
-            name: "Windows Latest x64 VS2017",
-            artifact: "Windows-x64.zip",
-            os: windows-latest,
-            platform: "windows_msvc2017_x64",
-            environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
-          }
-        - {
-            name: "Windows Latest x86 VS2015",
-            artifact: "Windows-x86.zip",
-            os: windows-latest,
-            platform: "windows_vs2015_32",
-            environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars32.bat"
-          }
-        - {
-            name: "Windows Latest x86 VS2017",
-            artifact: "Windows-x86.zip",
-            os: windows-latest,
-            platform: "windows_msvc2017_x86",
-            environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars32.bat"
-          }
-        - {
-            name: "Linux Latest x64",
-            artifact: "Linux-x64.zip",
-            platform: "linux_gcc_64_rhel72",
-            os: ubuntu-latest
-          }
-        - {
-            name: "macOS Latest x64",
-            artifact: "macOS-x64.zip",
-            platform: "mac_x64",
-            os: macos-latest
-          }
+        creator_version: [4.8.2, 4.10.1]
+        toolchain: [win32_vs2015, win64_vs2015, win32_vs2017, win64_vs2017, mac64, linux64]
+        exclude:
+          - creator_version: 4.8.2
+            toolchain: win32_vs2017
+          - creator_version: 4.8.2
+            toolchain: win64_vs2017
+          - creator_version: 4.10.1
+            toolchain: win32_vs2015
+          - creator_version: 4.10.1
+            toolchain: win64_vs2015
 
     steps:
     - uses: actions/checkout@v1
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
 
     - name: Installing system libs
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       shell: cmake -P {0}
       run: |
         if ("${{ runner.os }}" STREQUAL "Linux")
@@ -81,8 +37,50 @@ jobs:
           )
         endif()
 
+    - name: Set lookup maps
+      id: maps
+      run: |
+        if (matrix.creator_version == 4.8.2)
+          echo "::set-output name=qtversion::5.12.4"
+        if (matrix.creator_version == 4.10.1)
+          echo "::set-output name=qtversion::5.13.1"
+
+        if (matrix.toolchain == win64_vs2015)
+          echo "::set-output name=artifact::windows-x64.zip"
+          echo "::set-output name=os::windows-latest"
+          echo "::set-output name=platform::windows_vs2015_64"
+          echo "::set-output name=environment_script::C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+
+        if (matrix.toolchain == win32_vs2015)
+          echo "::set-output name=artifact::windows-x32.zip"
+          echo "::set-output name=os::windows-latest"
+          echo "::set-output name=platform::windows_vs2015_32"
+          echo "::set-output name=environment_script::C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars32.bat"
+
+        if (matrix.toolchain == win64_vs2017)
+          echo "::set-output name=artifact::windows-x64.zip"
+          echo "::set-output name=os::windows-latest"
+          echo "::set-output name=platform::windows_msvc2017_x64"
+          echo "::set-output name=environment_script::C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+
+        if (matrix.toolchain == win32_vs2017)
+          echo "::set-output name=artifact::windows-x32.zip"
+          echo "::set-output name=os::windows-latest"
+          echo "::set-output name=platform::windows_msvc2017_x86"
+          echo "::set-output name=environment_script::C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars32.bat"
+
+        if (matrix.toolchain == linux64)
+          echo "::set-output name=artifact::linux-x64.zip"
+          echo "::set-output name=os::ubuntu-latest"
+          echo "::set-output name=platform::linux_gcc_64_rhel72"
+
+        if (matrix.toolchain == mac64)
+          echo "::set-output name=artifact::macOS-x64.zip"
+          echo "::set-output name=os::macos-latest"
+          echo "::set-output name=platform::mac_x64"
+
+
     - name: Download Qt
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       id: qt
       shell: cmake -P {0}
       run: |
@@ -151,7 +149,6 @@ jobs:
 
 
     - name: Download Qt Creator
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       id: qt_creator
       shell: cmake -P {0}
       run: |
@@ -192,7 +189,6 @@ jobs:
         endif()
 
     - name: Configure
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       shell: cmake -P {0}
       run: |
         if ("${{ runner.os }}" STREQUAL "Windows" AND NOT "x${{ matrix.config.environment_script }}" STREQUAL "x")
@@ -226,7 +222,6 @@ jobs:
         endif()
 
     - name: Build
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       shell: cmake -P {0}
       run: |
         if ("${{ runner.os }}" STREQUAL "Windows")
@@ -261,7 +256,6 @@ jobs:
 
     - uses: actions/upload-artifact@v1
       id: upload_artifact
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       with:
         path: ./${{ env.PLUGIN_NAME }}-${{matrix.support.creator_version}}-${{ matrix.config.artifact }}
         name: ${{ env.PLUGIN_NAME}}-${{matrix.support.creator_version}}-${{ matrix.config.artifact }}
