@@ -22,7 +22,7 @@ jobs:
         - {
             qt_version: 5.13.1,
             creator_version: 4.10.1,
-            not_supported_platforms: ["windows_vs2015_x64", "windows_vs2015_x86"]
+            not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32"]
           }
 
         config:
