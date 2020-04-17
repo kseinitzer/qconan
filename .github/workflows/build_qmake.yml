@@ -152,7 +152,7 @@ jobs:
 
         foreach(package qtcreator qtcreator_dev)
           file(DOWNLOAD
-            "${qtc_base_url}/installer_source/${{matrix.conf.platform}}/${package}.7z" ./${package}.7z SHOW_PROGRESS)
+            "${qtc_base_url}/installer_source/${{matrix.config.platform}}/${package}.7z" ./${package}.7z SHOW_PROGRESS)
           execute_process(COMMAND
             ${CMAKE_COMMAND} -E tar xvf ../${package}.7z WORKING_DIRECTORY qtcreator)
         endforeach()
