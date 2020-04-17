@@ -10,6 +10,7 @@ jobs:
   build:
     name: ${{ matrix.config.name }}_${{matrix.support.creator_version}}
     runs-on: ${{ matrix.config.os }}
+    continue-on-error: true
     strategy:
       matrix:
         support:
@@ -24,17 +25,31 @@ jobs:
 
         config:
         - {
-            name: "Windows Latest x64",
+            name: "Windows Latest x64 VS2015",
             artifact: "Windows-x64.zip",
             os: windows-latest,
             platform: "windows_vs2015_64",
             environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
           }
         - {
-            name: "Windows Latest x86",
+            name: "Windows Latest x64 VS2017",
+            artifact: "Windows-x64.zip",
+            os: windows-latest,
+            platform: "windows_msvc2017_x64",
+            environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+          }
+        - {
+            name: "Windows Latest x86 VS2015",
             artifact: "Windows-x86.zip",
             os: windows-latest,
             platform: "windows_vs2015_32",
+            environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars32.bat"
+          }
+        - {
+            name: "Windows Latest x86 VS2017",
+            artifact: "Windows-x86.zip",
+            os: windows-latest,
+            platform: "windows_msvc2017_x86",
             environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars32.bat"
           }
         - {
