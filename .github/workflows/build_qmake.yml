@@ -17,6 +17,10 @@ jobs:
             qt_version: 5.12.4,
             creator_version: 4.8.2
           }
+        - {
+            qt_version: 5.13.1,
+            creator_version: 4.10.1
+          }
 
         config:
         - {
