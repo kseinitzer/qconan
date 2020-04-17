@@ -15,8 +15,14 @@ jobs:
       matrix:
         support:
         - {
+            qt_version: 5.12.4,
+            creator_version: 4.8.2,
+            not_supported_platforms: ["windows_msvc2017_x64", windows_msvc2017_x86"]
+          }
+        - {
             qt_version: 5.13.1,
-            creator_version: 4.10.1
+            creator_version: 4.10.1,
+            not_supported_platforms: ["windows_vs2015_x64", windows_vs2015_x86"]
           }
 
         config:
@@ -63,6 +69,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    - if: !contains(matrix.support.not_supported_platforms, matrix.config.platform)
 
     - name: Installing system libs
       shell: cmake -P {0}
