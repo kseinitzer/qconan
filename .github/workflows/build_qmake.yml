@@ -69,9 +69,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-      if: !contains(matrix.support.not_supported_platforms, matrix.config.platform)
 
     - name: Installing system libs
+      if: !(contains(matrix.support.not_supported_platforms,matrix.config.platform))
       shell: cmake -P {0}
       run: |
         if ("${{ runner.os }}" STREQUAL "Linux")
