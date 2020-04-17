@@ -65,8 +65,20 @@ jobs:
             os: macos-latest
           }
         exclude:
-          - platform: "windows_vs2015_64"
-            creator_version: 4.8.2
+          - config:
+            - {
+                name: "Windows Latest x64 VS2015",
+                artifact: "Windows-x64.zip",
+                os: windows-latest,
+                platform: "windows_vs2015_64",
+                environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+              }
+            support:
+            - {
+                qt_version: 5.12.4,
+                creator_version: 4.8.2
+              }
+
 
     steps:
     - uses: actions/checkout@v1
