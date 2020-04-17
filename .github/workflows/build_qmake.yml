@@ -17,12 +17,12 @@ jobs:
         - {
             qt_version: 5.12.4,
             creator_version: 4.8.2,
-            not_supported_platforms: ["windows_msvc2017_x64", windows_msvc2017_x86"]
+            not_supported_platforms: ["windows_msvc2017_x64", "windows_msvc2017_x86"]
           }
         - {
             qt_version: 5.13.1,
             creator_version: 4.10.1,
-            not_supported_platforms: ["windows_vs2015_x64", windows_vs2015_x86"]
+            not_supported_platforms: ["windows_vs2015_x64", "windows_vs2015_x86"]
           }
 
         config:
@@ -69,6 +69,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
 
     - name: Installing system libs
       if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
@@ -150,6 +151,7 @@ jobs:
 
 
     - name: Download Qt Creator
+      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       id: qt_creator
       shell: cmake -P {0}
       run: |
@@ -190,6 +192,7 @@ jobs:
         endif()
 
     - name: Configure
+      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       shell: cmake -P {0}
       run: |
         if ("${{ runner.os }}" STREQUAL "Windows" AND NOT "x${{ matrix.config.environment_script }}" STREQUAL "x")
@@ -223,6 +226,7 @@ jobs:
         endif()
 
     - name: Build
+      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       shell: cmake -P {0}
       run: |
         if ("${{ runner.os }}" STREQUAL "Windows")
@@ -257,6 +261,7 @@ jobs:
 
     - uses: actions/upload-artifact@v1
       id: upload_artifact
+      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       with:
         path: ./${{ env.PLUGIN_NAME }}-${{matrix.support.creator_version}}-${{ matrix.config.artifact }}
         name: ${{ env.PLUGIN_NAME}}-${{matrix.support.creator_version}}-${{ matrix.config.artifact }}
