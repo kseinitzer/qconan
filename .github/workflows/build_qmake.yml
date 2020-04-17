@@ -46,19 +46,6 @@ jobs:
             os: macos-latest
           }
 
-        include:
-        - support:
-          - {
-              qt_version: 5.13.1,
-              creator_version: 4.10.1
-            }
-          config:
-          - {
-              name: "Linux Latest x64",
-              artifact: "Linux-x64.zip",
-              platform: "linux_gcc_64_rhel72",
-              os: ubuntu-latest
-            }
     steps:
     - uses: actions/checkout@v1
 
