@@ -65,8 +65,8 @@ jobs:
             os: macos-latest
           }
         exclude:
-          - config.platform: "windows_vs2015_64"
-            support.creator_version: 4.8.2
+          - platform: "windows_vs2015_64"
+            creator_version: 4.8.2
 
     steps:
     - uses: actions/checkout@v1
