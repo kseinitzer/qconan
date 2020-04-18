@@ -246,7 +246,11 @@ namespace conan {
               ProjectExplorer::ProjectTree::instance()->currentProject();
           project)
       {
+#if QTCREATOR_MAJOR == 4 && QTCREATOR_MINOR < 8
+        QDir rootDir(project->projectDirectory().toString());
+#else
         QDir rootDir(project->rootProjectDirectory().toString());
+#endif
         for (const auto& relPath :
             {QStringLiteral("conanfile.py"), QStringLiteral("../conanfile.py")})
         {
