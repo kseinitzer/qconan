@@ -148,8 +148,17 @@ jobs:
         foreach(package qtbase qtdeclarative qttools qtsvg)
           file(DOWNLOAD
             "${qt_base_url}/${qt_package_name}/${package_version}${package}${package_suffix}.7z" ./${package}.7z
+            STATUS downloadStatus
             SHOW_PROGRESS
           )
+
+          list(GET downloadStatus 0 downloadFailed)
+          list(GET downloadStatus 1 downloadFailure)
+          if (downloadFailed)
+            message("::error::Package Download Failed with: ${downloadFailure}")
+            message(FATAL_ERROR "Error during package download: ${qt_base_url}/${qt_package_name}/${package_version}${package}${package_suffix}.7z")
+          endif()
+
           execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvf ../${package}.7z WORKING_DIRECTORY qt5)
         endforeach()
 
