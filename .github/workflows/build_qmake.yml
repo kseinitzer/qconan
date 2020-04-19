@@ -17,7 +17,7 @@ jobs:
         - {
             qt_version: 5.11.1,
             creator_version: 4.7.0,
-            not_supported_platforms: ["windows_msvc2017_x64", "windows_msvc2017_x86"]
+            not_supported_platforms: ["windows_msvc2017_x64", "windows_msvc2017_x86", "windows_vs2015_64", "windows_vs2015_32"]
           }
         - {
             qt_version: 5.12.4,
