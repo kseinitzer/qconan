@@ -134,15 +134,15 @@ jobs:
         set(package_suffix ${CMAKE_MATCH_2})
         string(REPLACE "-debug-symbols" "" package_suffix "${package_suffix}")
 
-        message("::debug::Before greedy hack: ${{package_suffix}}")
+        message("::debug::Before greedy hack: ${package_suffix}")
         # Workaround for CMake's greedy regex
         if ("${{ matrix.config.environment_script }}" MATCHES "vcvars32.bat")
           string(REPLACE "X86_64" "X86" package_suffix "${package_suffix}")
-          message("::debug::After 32Bit greedy hack: ${{package_suffix}}")
+          message("::debug::After 32Bit greedy hack: ${package_suffix}")
         endif()
         if ("${{ matrix.config.platform }}" MATCHES "2015")
           string(REPLACE "2017" "2015" package_suffix "${package_suffix}")
-          message("::debug::After 2017 greedy hack: ${{package_suffix}}")
+          message("::debug::After 2017 greedy hack: ${package_suffix}")
         endif()
 
         file(MAKE_DIRECTORY qt5)
