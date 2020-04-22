@@ -27,6 +27,15 @@ All configuration settings in a kit are realized by KitAspect implementations. A
 
 The existing infrastructure should be reused as efficient as possible. For example  OsSpecificAspects::pathListSeparator(OsType) and HostOsInfo::hostOs()
 
+## Help
+
+Configuration options can be provided by the qconan.ini file placed beside the project file. The following settings can be taken:
+
+ - global/path
+ - global/installFlags
+
+All fields are optional. If the path key is given, the value is interpreted as the path to the conanfile.py. If the key is not used the plugin tries to find a conanfile.py on the same level as the root project and one level above. If the installFlags key is given the value will be added to every conan install command.
+
 ## Features
 
 This section lists some top-level ideas on how to simplify the conan usage on a feature level. 
