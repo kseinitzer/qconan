@@ -204,6 +204,9 @@ namespace conan {
 
     void conanPlugin::setupBuildDirForce()
     {
+      if (auto conanPath = conanFilePath();
+          !_conanFileWatcher.files().contains(conanPath))
+        _conanFileWatcher.addPath(conanPath);
       setupBuildDir(true);
     }
 
