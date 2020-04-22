@@ -3,34 +3,68 @@ name: QMake Build Matrix
 on: [push]
 
 env:
-  QT_VERSION: 5.12.4
-  QT_CREATOR_VERSION: 4.8.2
   PLUGIN_PRO: conan.pro
   PLUGIN_NAME: conan
 
 jobs:
   build:
-    name: ${{ matrix.config.name }}
+    name: ${{ matrix.config.name }}_${{matrix.support.creator_version}}
     runs-on: ${{ matrix.config.os }}
     strategy:
       matrix:
+        support:
+        - {
+            qt_version: 5.11.1,
+            creator_version: 4.7.0,
+          }
+        - {
+            qt_version: 5.12.4,
+            creator_version: 4.8.2,
+          }
+        - {
+            qt_version: 5.13.1,
+            creator_version: 4.10.1,
+          }
+
         config:
         - {
-            name: "Windows Latest x64", artifact: "Windows-x64.zip",
+            name: "Windows Latest x64 VS2015",
+            artifact: "Windows-vs2015-x64.zip",
             os: windows-latest,
+            platform: "windows_vs2015_64",
             environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
           }
         - {
-            name: "Windows Latest x86", artifact: "Windows-x86.zip",
+            name: "Windows Latest x64 VS2017",
+            artifact: "Windows-vs2017-x64.zip",
             os: windows-latest,
+            platform: "windows_msvc2017_x64",
+            environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+          }
+        - {
+            name: "Windows Latest x86 VS2015",
+            artifact: "Windows-vs2015-x86.zip",
+            os: windows-latest,
+            platform: "windows_vs2015_32",
             environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars32.bat"
           }
         - {
-            name: "Linux Latest x64", artifact: "Linux-x64.zip",
+            name: "Windows Latest x86 VS2017",
+            artifact: "Windows-vs2017-x86.zip",
+            os: windows-latest,
+            platform: "windows_msvc2017_x86",
+            environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars32.bat"
+          }
+        - {
+            name: "Linux Latest x64",
+            artifact: "Linux-x64.zip",
+            platform: "linux_gcc_64_rhel72",
             os: ubuntu-latest
           }
         - {
-            name: "macOS Latest x64", artifact: "macOS-x64.zip",
+            name: "macOS Latest x64",
+            artifact: "macOS-x64.zip",
+            platform: "mac_x64",
             os: macos-latest
           }
 
@@ -50,17 +84,27 @@ jobs:
       id: qt
       shell: cmake -P {0}
       run: |
-        set(qt_version $ENV{QT_VERSION})
+        set(qt_version ${{ matrix.support.qt_version}})
 
         string(REPLACE "." "" qt_version_dotless "${qt_version}")
         if ("${{ runner.os }}" STREQUAL "Windows")
           set(url_os "windows_x86")
           if ("${{ matrix.config.environment_script }}" MATCHES "vcvars64.bat")
-            set(qt_package_name "qt.qt5.${qt_version_dotless}.win64_msvc2017_64")
-            set(qt_dir_prefix "${qt_version}/msvc2017_64")
+            if ("${{ matrix.config.platform }}" MATCHES "2015")
+              set(qt_package_name "qt.qt5.${qt_version_dotless}.win64_msvc2015_64")
+              set(qt_dir_prefix "${qt_version}/msvc2015_64")
+            else()
+              set(qt_package_name "qt.qt5.${qt_version_dotless}.win64_msvc2017_64")
+              set(qt_dir_prefix "${qt_version}/msvc2017_64")
+            endif()
           elseif ("${{ matrix.config.environment_script }}" MATCHES "vcvars32.bat")
-            set(qt_package_name "qt.qt5.${qt_version_dotless}.win32_msvc2017")
-            set(qt_dir_prefix "${qt_version}/msvc2017")
+            if ("${{ matrix.config.platform }}" MATCHES "2015")
+              set(qt_package_name "qt.qt5.${qt_version_dotless}.win32_msvc2015")
+              set(qt_dir_prefix "${qt_version}/msvc2015")
+            else()
+              set(qt_package_name "qt.qt5.${qt_version_dotless}.win32_msvc2017")
+              set(qt_dir_prefix "${qt_version}/msvc2017")
+            endif()
           else()
           endif()
         elseif ("${{ runner.os }}" STREQUAL "Linux")
@@ -86,6 +130,9 @@ jobs:
         # Workaround for CMake's greedy regex
         if ("${{ matrix.config.environment_script }}" MATCHES "vcvars32.bat")
           string(REPLACE "X86_64" "X86" package_suffix "${package_suffix}")
+        endif()
+        if ("${{ matrix.config.platform }}" MATCHES "2015")
+          string(REPLACE "2017" "2015" package_suffix "${package_suffix}")
         endif()
 
         file(MAKE_DIRECTORY qt5)
@@ -118,25 +165,18 @@ jobs:
       id: qt_creator
       shell: cmake -P {0}
       run: |
-        string(REGEX MATCH "([0-9]+.[0-9]+).[0-9]+" outvar "$ENV{QT_CREATOR_VERSION}")
-        set(qtc_base_url "https://download.qt.io/official_releases/qtcreator/${CMAKE_MATCH_1}/$ENV{QT_CREATOR_VERSION}")
+        string(REGEX MATCH "([0-9]+.[0-9]+).[0-9]+" outvar "${{matrix.support.creator_version}}")
+        set(qtc_base_url "https://download.qt.io/official_releases/qtcreator/${CMAKE_MATCH_1}/${{matrix.support.creator_version}}")
 
         if ("${{ runner.os }}" STREQUAL "Windows")
           set(qtc_output_directory "qtcreator/lib/qtcreator/plugins")
           set(qtc_binary_name "$ENV{PLUGIN_NAME}4.dll")
-          if ("${{ matrix.config.environment_script }}" MATCHES "vcvars64.bat")
-            set(qtc_platform "windows_vs2015_64")
-          elseif ("${{ matrix.config.environment_script }}" MATCHES "vcvars32.bat")
-            set(qtc_platform "windows_vs2015_32")
-          endif()
         elseif ("${{ runner.os }}" STREQUAL "Linux")
           set(qtc_output_directory "qtcreator/lib/qtcreator/plugins")
           set(qtc_binary_name "lib$ENV{PLUGIN_NAME}.so")
-          set(qtc_platform "linux_gcc_64_rhel72")
         elseif ("${{ runner.os }}" STREQUAL "macOS")
           set(qtc_output_directory "qtcreator/bin/Qt Creator.app/Contents/PlugIns")
           set(qtc_binary_name "lib$ENV{PLUGIN_NAME}.dylib")
-          set(qtc_platform "mac_x64")
         endif()
 
         # Save the path for other steps
@@ -147,7 +187,9 @@ jobs:
 
         foreach(package qtcreator qtcreator_dev)
           file(DOWNLOAD
-            "${qtc_base_url}/installer_source/${qtc_platform}/${package}.7z" ./${package}.7z SHOW_PROGRESS)
+            "${qtc_base_url}/installer_source/${{matrix.config.platform}}/${package}.7z" ./${package}.7z
+              SHOW_PROGRESS)
+
           execute_process(COMMAND
             ${CMAKE_COMMAND} -E tar xvf ../${package}.7z WORKING_DIRECTORY qtcreator)
         endforeach()
@@ -220,7 +262,7 @@ jobs:
           message(FATAL_ERROR "Bad exit status")
         endif()
 
-        file(TO_CMAKE_PATH "$ENV{GITHUB_WORKSPACE}/$ENV{PLUGIN_NAME}-$ENV{QT_CREATOR_VERSION}-${{ matrix.config.artifact }}" artifact)
+        file(TO_CMAKE_PATH "$ENV{GITHUB_WORKSPACE}/$ENV{PLUGIN_NAME}-${{matrix.support.creator_version}}-${{ matrix.config.artifact }}" artifact)
 
         execute_process(COMMAND
           ${CMAKE_COMMAND} -E tar cvf ${artifact} --format=zip "${{ steps.qt_creator.outputs.qtc_binary_name }}"
@@ -230,8 +272,8 @@ jobs:
     - uses: actions/upload-artifact@v1
       id: upload_artifact
       with:
-        path: ./${{ env.PLUGIN_NAME }}-${{ env.QT_CREATOR_VERSION }}-${{ matrix.config.artifact }}
-        name: ${{ env.PLUGIN_NAME}}-${{ env.QT_CREATOR_VERSION }}-${{ matrix.config.artifact }}
+        path: ./${{ env.PLUGIN_NAME }}-${{matrix.support.creator_version}}-${{ matrix.config.artifact }}
+        name: ${{ env.PLUGIN_NAME}}-${{matrix.support.creator_version}}-${{ matrix.config.artifact }}
 
   release:
     if: contains(github.ref, 'tags/v')
@@ -266,21 +308,47 @@ jobs:
     runs-on: ${{ matrix.config.os }}
     strategy:
       matrix:
+        support:
+        - {
+            creator_version: 4.8.2,
+          }
+        - {
+            creator_version: 4.10.1,
+          }
+
         config:
         - {
-            name: "Windows Latest x64", artifact: "Windows-x64.zip",
+            name: "Windows Latest x64 VS2015",
+            artifact: "Windows-vs2015-x64.zip",
+            platform: "windows_vs2015_64",
+            os: windows-latest
+          }
+        - {
+            name: "Windows Latest x86 VS2015",
+            artifact: "Windows-vs2015-x86.zip",
+            platform: "windows_vs2015_32",
+            os: windows-latest
+          }
+        - {
+            name: "Windows Latest x64 VS2017",
+            artifact: "Windows-vs2017-x64.zip",
+            platform: "windows_msvc2017_x64",
+            os: windows-latest
+          }
+        - {
+            name: "Windows Latest x86 VS2017",
+            artifact: "Windows-vs2017-x86.zip",
+            platform: "windows_msvc2017_x86",
+            os: windows-latest
+          }
+        - {
+            name: "Linux Latest x64",
+            artifact: "Linux-x64.zip",
             os: ubuntu-latest
           }
         - {
-            name: "Windows Latest x86", artifact: "Windows-x86.zip",
-            os: ubuntu-latest
-          }
-        - {
-            name: "Linux Latest x64", artifact: "Linux-x64.zip",
-            os: ubuntu-latest
-          }
-        - {
-            name: "macOS Latest x64", artifact: "macOS-x64.zip",
+            name: "macOS Latest x64",
+            artifact: "macOS-x64.zip",
             os: macos-latest
           }
     needs: release
@@ -289,7 +357,7 @@ jobs:
     - name: Download artifact
       uses: actions/download-artifact@v1
       with:
-        name: ${{ env.PLUGIN_NAME }}-${{ env.QT_CREATOR_VERSION }}-${{ matrix.config.artifact }}
+        name: ${{ env.PLUGIN_NAME }}-${{matrix.support.creator_version}}-${{ matrix.config.artifact }}
         path: ./
 
     - name: Download URL
@@ -309,6 +377,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.set_upload_url.outputs.upload_url }}
-        asset_path: ./${{ env.PLUGIN_NAME }}-${{ env.QT_CREATOR_VERSION }}-${{ matrix.config.artifact }}
-        asset_name: ${{ env.PLUGIN_NAME }}-${{ env.QT_CREATOR_VERSION }}-${{ matrix.config.artifact }}
+        asset_path: ./${{ env.PLUGIN_NAME }}-${{matrix.support.creator_version}}-${{ matrix.config.artifact }}
+        asset_name: ${{ env.PLUGIN_NAME }}-${{matrix.support.creator_version}}-${{ matrix.config.artifact }}
         asset_content_type: application/zip
