@@ -28,6 +28,11 @@ namespace {
   const QString kitName = QStringLiteral("conan kit");
 };
 
+#if QTCREATOR_MAJOR == 4 && QTCREATOR_MINOR < 11
+namespace Utils {
+  using EnvironmentItems = QList< EnvironmentItem >;
+} // namespace Utils
+#endif
 namespace conan {
   namespace Internal {
 
@@ -228,8 +233,14 @@ namespace conan {
           Utils::EnvironmentItems newPaths;
           foreach (const auto& path, appendPath)
           {
-            newPaths.push_back(Utils::EnvironmentItem(
-                QStringLiteral("PATH"), path, Utils::NameValueItem::Append));
+#if QTCREATOR_MAJOR == 4 && QTCREATOR_MINOR < 11
+            auto envItem = Utils::EnvironmentItem(
+                QStringLiteral("PATH"), path, Utils::EnvironmentItem::Append);
+#else
+            auto envItem = Utils::EnvironmentItem(
+                QStringLiteral("PATH"), path, Utils::NameValueItem::Append);
+#endif
+            newPaths.push_back(envItem);
           }
           runEnv->setUserEnvironmentChanges(newPaths);
         }
