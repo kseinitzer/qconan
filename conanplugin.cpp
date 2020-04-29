@@ -28,6 +28,12 @@ namespace {
   const QString kitName = QStringLiteral("conan kit");
 };
 
+#if QTCREATOR_MAJOR == 4 && QTCREATOR_MINOR < 11
+namespace Utils {
+  using EnvironmentItems = QList< EnvironmentItem >;
+  using NameValueItem = EnvironmentItem;
+} // namespace Utils
+#endif
 namespace conan {
   namespace Internal {
 
@@ -228,8 +234,9 @@ namespace conan {
           Utils::EnvironmentItems newPaths;
           foreach (const auto& path, appendPath)
           {
-            newPaths.push_back(Utils::EnvironmentItem(
-                QStringLiteral("PATH"), path, Utils::NameValueItem::Append));
+            auto envItem = Utils::EnvironmentItem(
+                QStringLiteral("PATH"), path, Utils::NameValueItem::Append);
+            newPaths.push_back(envItem);
           }
           runEnv->setUserEnvironmentChanges(newPaths);
         }
@@ -271,8 +278,7 @@ namespace conan {
     ProjectExplorer::EnvironmentAspect*
     conanPlugin::runEnvironmentAspect() const
     {
-      auto prjTree = ProjectExplorer::ProjectTree::instance();
-      if (auto target = prjTree->currentTarget(); target)
+      if (auto target = currentTarget(); target)
       {
         if (auto run = target->activeRunConfiguration(); run)
         {
@@ -286,6 +292,18 @@ namespace conan {
     {
       auto messenger = Core::MessageManager::instance();
       messenger->write(tr("conan plugin: %1").arg(text));
+    }
+
+    ProjectExplorer::Target* conanPlugin::currentTarget()
+    {
+      auto prjTree = ProjectExplorer::ProjectTree::instance();
+#if QTCREATOR_MAJOR == 4 && QTCREATOR_MINOR >= 11
+      return prjTree->currentTarget();
+#else
+      if (auto prj = prjTree->currentProject(); prj)
+        return prj->activeTarget();
+      return nullptr;
+#endif
     }
 
     QString conanPlugin::currentBuildDir() const

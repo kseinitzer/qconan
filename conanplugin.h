@@ -9,7 +9,9 @@
 class BuildInfo;
 namespace ProjectExplorer {
   class EnvironmentAspect;
-}
+  class Target;
+} // namespace ProjectExplorer
+
 namespace conan {
   namespace Internal {
 
@@ -54,8 +56,11 @@ namespace conan {
       QString conanFilePath() const;
 
       ProjectExplorer::EnvironmentAspect* runEnvironmentAspect() const;
+
     private:
       void write(const QString& text) const;
+
+      static ProjectExplorer::Target* currentTarget();
 
       QString currentBuildDir() const;
 
