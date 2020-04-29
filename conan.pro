@@ -3,12 +3,14 @@ DEFINES += CONAN_LIBRARY
 # conan files
 
 SOURCES += \
-        conanplugin.cpp
+        conanplugin.cpp \
+        BuildInfo.cpp
 
 HEADERS += \
         conanplugin.h \
         conan_global.h \
-        conanconstants.h
+        conanconstants.h \
+        BuildInfo.h
 
 CONFIG += c++17
 
