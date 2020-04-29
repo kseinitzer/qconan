@@ -10,6 +10,7 @@ jobs:
   build:
     name: ${{ matrix.config.name }}_${{matrix.support.creator_version}}
     runs-on: ${{ matrix.config.os }}
+    continue-on-error: true
     strategy:
       matrix:
         support:
