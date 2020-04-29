@@ -1,9 +1,8 @@
 #include "conanplugin.h"
+#include "BuildInfo.h"
 #include "conanconstants.h"
-
 #include <QAction>
 #include <QDebug>
-#include <QJsonDocument>
 #include <QMainWindow>
 #include <QMenu>
 #include <QMessageBox>
@@ -42,7 +41,7 @@ namespace conan {
       // Delete members
     }
 
-    QVariantMap conanPlugin::conanInstall(
+    BuildInfo conanPlugin::conanInstall(
         const QString& pathToConanFile, const QDir& directory)
     {
       const QString conanBinPath = QStringLiteral("conan");
@@ -70,25 +69,8 @@ namespace conan {
 
       _lastInstallDir = directory.canonicalPath();
 
-      QFile buildInfo(
+      return BuildInfo::fromJsonFile(
           directory.filePath(QStringLiteral("conanbuildinfo.json")));
-      if (!buildInfo.open(QIODevice::ReadOnly))
-      {
-        write(tr("Error, could not open buildinfo: %1")
-                  .arg(buildInfo.fileName()));
-        return {};
-      }
-
-      QJsonParseError err;
-      auto doc = QJsonDocument::fromJson(buildInfo.readAll(), &err);
-
-      if (err.error != QJsonParseError::NoError)
-      {
-        write(tr("Error, JSON file could not be parsed: %1")
-                  .arg(err.errorString()));
-        return {};
-      }
-      return doc.object().toVariantMap();
     }
 
     bool conanPlugin::initialize(
@@ -231,7 +213,7 @@ namespace conan {
           !conanPath.isEmpty() &&
           (forceInstall == true || _lastInstallDir != buildPath))
       {
-        const QVariantMap buildInfo = conanInstall(conanPath, buildPath);
+        const BuildInfo buildInfo = conanInstall(conanPath, buildPath);
       }
       return;
     }
