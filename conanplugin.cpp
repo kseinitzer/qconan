@@ -45,16 +45,16 @@ namespace conan {
         const QString& pathToConanFile, const QDir& directory)
     {
       const QString conanBinPath = QStringLiteral("conan");
-      QStringList conanInstall = {QStringLiteral("install"), pathToConanFile,
+      QStringList installCommand = {QStringLiteral("install"), pathToConanFile,
           QStringLiteral("-g"), QStringLiteral("json")};
 
       if (!_config.installFlags().isEmpty())
       {
-        conanInstall.push_back(_config.installFlags());
+        installCommand.push_back(_config.installFlags());
       }
 
       write(tr("Run conan %1 for >%2< in >%3<")
-                .arg(conanInstall.join(" "))
+                .arg(installCommand.join(" "))
                 .arg(pathToConanFile)
                 .arg(directory.path()));
 
