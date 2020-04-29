@@ -14,10 +14,12 @@
 #include <coreplugin/icore.h>
 #include <coreplugin/messagemanager.h>
 #include <projectexplorer/buildconfiguration.h>
+#include <projectexplorer/environmentaspect.h>
 #include <projectexplorer/kitinformation.h>
 #include <projectexplorer/kitmanager.h>
 #include <projectexplorer/project.h>
 #include <projectexplorer/projecttree.h>
+#include <projectexplorer/runconfiguration.h>
 #include <projectexplorer/target.h>
 #include <utils/environment.h>
 #include <utils/synchronousprocess.h>
@@ -214,6 +216,23 @@ namespace conan {
           (forceInstall == true || _lastInstallDir != buildPath))
       {
         const BuildInfo buildInfo = conanInstall(conanPath, buildPath);
+
+        write(tr("Use library path information from conan >%1<")
+                  .arg(buildInfo.libraryPath().join(":")));
+
+        QStringList appendPath =
+            buildInfo.libraryPath() + buildInfo.binaryPath();
+
+        if (auto runEnv = runEnvironmentAspect(); runEnv)
+        {
+          Utils::EnvironmentItems newPaths;
+          foreach (const auto& path, appendPath)
+          {
+            newPaths.push_back(Utils::EnvironmentItem(
+                QStringLiteral("PATH"), path, Utils::NameValueItem::Append));
+          }
+          runEnv->setUserEnvironmentChanges(newPaths);
+        }
       }
       return;
     }
@@ -247,6 +266,20 @@ namespace conan {
         }
       }
       return {};
+    }
+
+    ProjectExplorer::EnvironmentAspect*
+    conanPlugin::runEnvironmentAspect() const
+    {
+      auto prjTree = ProjectExplorer::ProjectTree::instance();
+      if (auto target = prjTree->currentTarget(); target)
+      {
+        if (auto run = target->activeRunConfiguration(); run)
+        {
+          return run->aspect< ProjectExplorer::EnvironmentAspect >();
+        }
+      }
+      return nullptr;
     }
 
     void conanPlugin::write(const QString& text) const

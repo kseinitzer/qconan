@@ -7,6 +7,9 @@
 #include <projectexplorer/projecttree.h>
 
 class BuildInfo;
+namespace ProjectExplorer {
+  class EnvironmentAspect;
+}
 namespace conan {
   namespace Internal {
 
@@ -50,6 +53,7 @@ namespace conan {
 
       QString conanFilePath() const;
 
+      ProjectExplorer::EnvironmentAspect* runEnvironmentAspect() const;
     private:
       void write(const QString& text) const;
 
