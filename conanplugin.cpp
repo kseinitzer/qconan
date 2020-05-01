@@ -147,7 +147,11 @@ namespace conan {
 
       _config =
           PluginConfig(settings.value(QStringLiteral("global/path")).toString(),
-              settings.value(QStringLiteral("global/installFlags")).toString());
+              settings.value(QStringLiteral("global/installFlags")).toString(),
+              settings.value(QStringLiteral("environment/useLibPath"), false)
+                  .toBool(),
+              settings.value(QStringLiteral("environment/useBinPath"), false)
+                  .toBool());
 
       if (const auto path = conanFilePath(); !path.isEmpty())
       {
@@ -226,8 +230,13 @@ namespace conan {
         write(tr("Use library path information from conan >%1<")
                   .arg(buildInfo.libraryPath().join(":")));
 
-        QStringList appendPath =
-            buildInfo.libraryPath() + buildInfo.binaryPath();
+        QStringList appendPath = buildInfo.environmentPath();
+        if (_config.useLibraryPathAsEnvironmentPath())
+          appendPath += buildInfo.libraryPath();
+        if (_config.useBinaryPathAsEnvironmentPath())
+          appendPath += buildInfo.binaryPath();
+
+        appendPath = appendPath.toSet().toList();
 
         if (auto runEnv = runEnvironmentAspect(); runEnv)
         {

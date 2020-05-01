@@ -35,6 +35,18 @@ public:
   QStringList binaryPath() const;
 
   ///
+  /// \brief environmentPath Read the PATH information from the build info
+  ///
+  /// Every conan package can add information to the PATH environment. The final
+  /// consuming package collect all informations from the required packages and
+  /// provide a list of all PATH values. This method provides access to the
+  /// available information from deps_env_info.
+  /// \return Return a list containing the PATH information from all
+  /// dependencies. It is guaranteed that every element is unique in the list.
+  ///
+  QStringList environmentPath() const;
+
+  ///
   /// \brief dependenciesToStringList Combine all found dependencies values
   /// \param key The key for which the values should be combined.
   /// \return All dependency values with the same key will be returned in a

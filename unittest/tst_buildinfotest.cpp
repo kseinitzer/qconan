@@ -71,6 +71,7 @@ private slots:
 
       QVariantMap root;
       root.insert("dependencies", deps);
+      root.insert("deps_env_info", QVariantMap());
 
       QTest::newRow("singleLib")
           << BuildInfo(root) << QStringList("dep1_test") << QStringList();
@@ -90,6 +91,7 @@ private slots:
 
       QVariantMap root;
       root.insert("dependencies", deps);
+      root.insert("deps_env_info", QVariantMap());
 
       QTest::newRow("doubleLib")
           << BuildInfo(root) << QStringList({"dep1_test", "dep2_test"})
@@ -105,6 +107,7 @@ private slots:
 
       QVariantMap root;
       root.insert("dependencies", deps);
+      root.insert("deps_env_info", QVariantMap());
 
       QTest::newRow("doubleBin") << BuildInfo(root) << QStringList()
                                  << QStringList({"dep1_test", "dep2_test"});
@@ -134,6 +137,52 @@ private slots:
 
     QCOMPARE(actualLib, libPaths);
     QCOMPARE(actualBin, binPaths);
+  }
+
+  void testEnvironmentPath_data()
+  {
+    QTest::addColumn< BuildInfo >("info");
+    QTest::addColumn< QStringList >("paths");
+
+    auto createTree = [](const QVariantList& path) -> QVariantMap {
+      QVariantMap envInfo;
+      envInfo.insert("PATH", QVariant::fromValue(path));
+
+      QVariantMap dep;
+      dep.insert("lib_paths", QVariant::fromValue(QList< QVariant >()));
+      dep.insert("bin_paths", QVariant::fromValue(QList< QVariant >()));
+
+      QVariantMap root;
+      root.insert("deps_env_info", envInfo);
+      root.insert("dependencies", QList< QVariant >({dep}));
+      return root;
+    };
+
+    QTest::newRow("emptyList") << BuildInfo(createTree({})) << QStringList();
+    QTest::newRow("singleEntry")
+        << BuildInfo(createTree({"pathInfo1"})) << QStringList("pathInfo1");
+    QTest::newRow("doubleEntry")
+        << BuildInfo(createTree({"pathInfo1", "pathInfo2"}))
+        << QStringList({"pathInfo1", "pathInfo2"});
+    QTest::newRow("notUniqueEntries")
+        << BuildInfo(createTree({"pathInfo1", "pathInfo2", "pathInfo1"}))
+        << QStringList({"pathInfo1", "pathInfo2"});
+  }
+
+  void testEnvironmentPath()
+  {
+    QFETCH(BuildInfo, info);
+    QFETCH(QStringList, paths);
+
+    QCOMPARE(info.isValid(), true);
+    QCOMPARE(info.lastError().isNull(), true);
+
+    auto actualPath = info.environmentPath();
+
+    actualPath.sort();
+    paths.sort();
+
+    QCOMPARE(actualPath, paths);
   }
 };
 

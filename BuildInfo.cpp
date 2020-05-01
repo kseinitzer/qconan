@@ -2,8 +2,11 @@
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSet>
 
 namespace {
+  const QString envInfoKey = QStringLiteral("deps_env_info");
+  const QString envPathKey = QStringLiteral("PATH");
   const QString dependencyKey = QStringLiteral("dependencies");
   const QString libraryKey = QStringLiteral("lib_paths");
   const QString binaryKey = QStringLiteral("bin_paths");
@@ -55,6 +58,17 @@ QStringList BuildInfo::binaryPath() const
   return dependenciesToStringList(binaryKey);
 }
 
+QStringList BuildInfo::environmentPath() const
+{
+  if (const auto& envInfoObj = _root.value(envInfoKey);
+      envInfoObj.type() == QVariant::Type::Map)
+  {
+    const QVariantMap envInfo = envInfoObj.toMap();
+    return envInfo.value(envPathKey).toStringList().toSet().toList();
+  }
+  return {};
+}
+
 QStringList BuildInfo::dependenciesToStringList(const QString key) const
 {
   QStringList result;
@@ -76,13 +90,23 @@ QStringList BuildInfo::dependenciesToStringList(const QString key) const
 
 bool BuildInfo::isValid() const
 {
-
-  if (_root.isEmpty() ||
-      _root.value(dependencyKey).type() != QVariant::Type::List)
+  if (_root.isEmpty())
   {
-    _failureMessage =
-        QObject::tr("BuildInfo: No data available or dependency key missing");
+    _failureMessage = QObject::tr("BuildInfo: No data available");
     return false;
+  }
+
+  std::list< std::pair< QString, QVariant::Type > > rootElements = {
+      {dependencyKey, QVariant::Type::List}, {envInfoKey, QVariant::Type::Map}};
+
+  for (const auto& [key, type] : rootElements)
+  {
+    if (_root.value(key).type() != type)
+    {
+      _failureMessage =
+          QObject::tr("BuildInfo: The %1 key is missing").arg(key);
+      return false;
+    }
   }
 
   foreach (const auto& depList, _root.value(dependencyKey).toList())
