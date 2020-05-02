@@ -291,7 +291,11 @@ namespace conan {
       {
         if (auto run = target->activeRunConfiguration(); run)
         {
+#if QTCREATOR_MAJOR == 4 && QTCREATOR_MINOR < 8
+          return run->extraAspect< ProjectExplorer::EnvironmentAspect >();
+#else
           return run->aspect< ProjectExplorer::EnvironmentAspect >();
+#endif
         }
       }
       return nullptr;
