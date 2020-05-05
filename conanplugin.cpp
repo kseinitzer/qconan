@@ -1,9 +1,8 @@
 #include "conanplugin.h"
+#include "BuildInfo.h"
 #include "conanconstants.h"
-
 #include <QAction>
 #include <QDebug>
-#include <QJsonDocument>
 #include <QMainWindow>
 #include <QMenu>
 #include <QMessageBox>
@@ -15,10 +14,12 @@
 #include <coreplugin/icore.h>
 #include <coreplugin/messagemanager.h>
 #include <projectexplorer/buildconfiguration.h>
+#include <projectexplorer/environmentaspect.h>
 #include <projectexplorer/kitinformation.h>
 #include <projectexplorer/kitmanager.h>
 #include <projectexplorer/project.h>
 #include <projectexplorer/projecttree.h>
+#include <projectexplorer/runconfiguration.h>
 #include <projectexplorer/target.h>
 #include <utils/environment.h>
 #include <utils/synchronousprocess.h>
@@ -27,6 +28,12 @@ namespace {
   const QString kitName = QStringLiteral("conan kit");
 };
 
+#if QTCREATOR_MAJOR == 4 && QTCREATOR_MINOR < 11
+namespace Utils {
+  using EnvironmentItems = QList< EnvironmentItem >;
+  using NameValueItem = EnvironmentItem;
+} // namespace Utils
+#endif
 namespace conan {
   namespace Internal {
 
@@ -42,20 +49,20 @@ namespace conan {
       // Delete members
     }
 
-    QVariantMap conanPlugin::conanInstall(
+    BuildInfo conanPlugin::conanInstall(
         const QString& pathToConanFile, const QDir& directory)
     {
       const QString conanBinPath = QStringLiteral("conan");
-      QStringList conanInstall = {QStringLiteral("install"), pathToConanFile,
+      QStringList installCommand = {QStringLiteral("install"), pathToConanFile,
           QStringLiteral("-g"), QStringLiteral("json")};
 
       if (!_config.installFlags().isEmpty())
       {
-        conanInstall.push_back(_config.installFlags());
+        installCommand.push_back(_config.installFlags());
       }
 
       write(tr("Run conan %1 for >%2< in >%3<")
-                .arg(conanInstall.join(" "))
+                .arg(installCommand.join(" "))
                 .arg(pathToConanFile)
                 .arg(directory.path()));
 
@@ -64,31 +71,14 @@ namespace conan {
       process.setTimeoutS(5); // TODO: Must run completly asynchron because
                               // downloads may take a lot of time
       Utils::SynchronousProcessResponse response =
-          process.runBlocking(conanBinPath, conanInstall);
+          process.runBlocking(conanBinPath, installCommand);
       if (response.result != Utils::SynchronousProcessResponse::Finished)
         return {};
 
       _lastInstallDir = directory.canonicalPath();
 
-      QFile buildInfo(
+      return BuildInfo::fromJsonFile(
           directory.filePath(QStringLiteral("conanbuildinfo.json")));
-      if (!buildInfo.open(QIODevice::ReadOnly))
-      {
-        write(tr("Error, could not open buildinfo: %1")
-                  .arg(buildInfo.fileName()));
-        return {};
-      }
-
-      QJsonParseError err;
-      auto doc = QJsonDocument::fromJson(buildInfo.readAll(), &err);
-
-      if (err.error != QJsonParseError::NoError)
-      {
-        write(tr("Error, JSON file could not be parsed: %1")
-                  .arg(err.errorString()));
-        return {};
-      }
-      return doc.object().toVariantMap();
     }
 
     bool conanPlugin::initialize(
@@ -157,7 +147,11 @@ namespace conan {
 
       _config =
           PluginConfig(settings.value(QStringLiteral("global/path")).toString(),
-              settings.value(QStringLiteral("global/installFlags")).toString());
+              settings.value(QStringLiteral("global/installFlags")).toString(),
+              settings.value(QStringLiteral("environment/useLibPath"), false)
+                  .toBool(),
+              settings.value(QStringLiteral("environment/useBinPath"), false)
+                  .toBool());
 
       if (const auto path = conanFilePath(); !path.isEmpty())
       {
@@ -231,7 +225,30 @@ namespace conan {
           !conanPath.isEmpty() &&
           (forceInstall == true || _lastInstallDir != buildPath))
       {
-        const QVariantMap buildInfo = conanInstall(conanPath, buildPath);
+        const BuildInfo buildInfo = conanInstall(conanPath, buildPath);
+
+        write(tr("Use library path information from conan >%1<")
+                  .arg(buildInfo.libraryPath().join(":")));
+
+        QStringList appendPath = buildInfo.environmentPath();
+        if (_config.useLibraryPathAsEnvironmentPath())
+          appendPath += buildInfo.libraryPath();
+        if (_config.useBinaryPathAsEnvironmentPath())
+          appendPath += buildInfo.binaryPath();
+
+        appendPath = appendPath.toSet().toList();
+
+        if (auto runEnv = runEnvironmentAspect(); runEnv)
+        {
+          Utils::EnvironmentItems newPaths;
+          foreach (const auto& path, appendPath)
+          {
+            auto envItem = Utils::EnvironmentItem(
+                QStringLiteral("PATH"), path, Utils::NameValueItem::Append);
+            newPaths.push_back(envItem);
+          }
+          runEnv->setUserEnvironmentChanges(newPaths);
+        }
       }
       return;
     }
@@ -267,10 +284,39 @@ namespace conan {
       return {};
     }
 
+    ProjectExplorer::EnvironmentAspect*
+    conanPlugin::runEnvironmentAspect() const
+    {
+      if (auto target = currentTarget(); target)
+      {
+        if (auto run = target->activeRunConfiguration(); run)
+        {
+#if QTCREATOR_MAJOR == 4 && QTCREATOR_MINOR < 8
+          return run->extraAspect< ProjectExplorer::EnvironmentAspect >();
+#else
+          return run->aspect< ProjectExplorer::EnvironmentAspect >();
+#endif
+        }
+      }
+      return nullptr;
+    }
+
     void conanPlugin::write(const QString& text) const
     {
       auto messenger = Core::MessageManager::instance();
       messenger->write(tr("conan plugin: %1").arg(text));
+    }
+
+    ProjectExplorer::Target* conanPlugin::currentTarget()
+    {
+      auto prjTree = ProjectExplorer::ProjectTree::instance();
+#if QTCREATOR_MAJOR == 4 && QTCREATOR_MINOR >= 11
+      return prjTree->currentTarget();
+#else
+      if (auto prj = prjTree->currentProject(); prj)
+        return prj->activeTarget();
+      return nullptr;
+#endif
     }
 
     QString conanPlugin::currentBuildDir() const
