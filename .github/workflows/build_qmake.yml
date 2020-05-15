@@ -28,6 +28,11 @@ jobs:
             qt_version: 5.13.1,
             not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32", "mac_x64"]
           }
+        - {
+            qt_version: 5.14.1,
+            creator_version: 4.11.2,
+            not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32"]
+          }
 
         config:
         - {
@@ -347,6 +352,10 @@ jobs:
         - {
             creator_version: 4.10.2,
             not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32", "mac_x64"]
+          }
+        - {
+            creator_version: 4.11.2,
+            not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32"]
           }
 
         config:
