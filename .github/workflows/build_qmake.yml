@@ -15,7 +15,7 @@ jobs:
         support:
         - {
             qt_version: 5.11.1,
-            creator_version: 4.7.0,
+            creator_version: 4.7.2,
             not_supported_platforms: ["windows_msvc2017_x64", "windows_msvc2017_x86", "windows_vs2015_64", "windows_vs2015_32"]
           }
         - {
@@ -24,9 +24,9 @@ jobs:
             not_supported_platforms: ["windows_vs2015_32", "windows_msvc2017_x86", "windows_msvc2017_x64"]
           }
         - {
+            creator_version: 4.10.2,
             qt_version: 5.13.1,
-            creator_version: 4.10.1,
-            not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32"]
+            not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32", "mac_x64"]
           }
 
         config:
@@ -337,7 +337,7 @@ jobs:
       matrix:
         support:
         - {
-            creator_version: 4.7.0,
+            creator_version: 4.7.2,
             not_supported_platforms: ["windows_msvc2017_x64", "windows_msvc2017_x86", "windows_vs2015_64", "windows_vs2015_32"]
           }
         - {
@@ -345,8 +345,8 @@ jobs:
             not_supported_platforms: ["windows_vs2015_32", "windows_msvc2017_x86", "windows_msvc2017_x64"]
           }
         - {
-            creator_version: 4.10.1,
-            not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32"]
+            creator_version: 4.10.2,
+            not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32", "mac_x64"]
           }
 
         config:
@@ -382,6 +382,7 @@ jobs:
         - {
             name: "macOS Latest x64",
             artifact: "macOS-x64.zip",
+            platform: "mac_x64",
             os: macos-latest
           }
     needs: release
