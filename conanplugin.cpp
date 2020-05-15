@@ -68,8 +68,7 @@ namespace conan {
 
       Utils::SynchronousProcess process;
       process.setWorkingDirectory(directory.path());
-      process.setTimeoutS(5); // TODO: Must run completly asynchron because
-                              // downloads may take a lot of time
+      process.setTimeoutS(5);
       if (runBlocking(process, conanBinPath, installCommand).result !=
           Utils::SynchronousProcessResponse::Finished)
       {
