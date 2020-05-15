@@ -14,13 +14,13 @@ jobs:
       matrix:
         support:
         - {
-            qt_version: 5.11.1,
             creator_version: 4.7.2,
+            qt_version: 5.11.1,
             not_supported_platforms: ["windows_msvc2017_x64", "windows_msvc2017_x86", "windows_vs2015_64", "windows_vs2015_32"]
           }
         - {
-            qt_version: 5.12.4,
             creator_version: 4.8.2,
+            qt_version: 5.12.4,
             not_supported_platforms: ["windows_vs2015_32", "windows_msvc2017_x86", "windows_msvc2017_x64"]
           }
         - {
@@ -29,13 +29,13 @@ jobs:
             not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32", "mac_x64"]
           }
         - {
-            qt_version: 5.14.1,
             creator_version: 4.11.2,
+            qt_version: 5.14.1,
             not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32"]
           }
         - {
-            qt_version: 5.14.2,
             creator_version: 4.12.0,
+            qt_version: 5.14.2,
             not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32"]
           }
 
