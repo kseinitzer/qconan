@@ -14,18 +14,28 @@ jobs:
       matrix:
         support:
         - {
+            creator_version: 4.7.2,
             qt_version: 5.11.1,
-            creator_version: 4.7.0,
             not_supported_platforms: ["windows_msvc2017_x64", "windows_msvc2017_x86", "windows_vs2015_64", "windows_vs2015_32"]
           }
         - {
-            qt_version: 5.12.4,
             creator_version: 4.8.2,
+            qt_version: 5.12.4,
             not_supported_platforms: ["windows_vs2015_32", "windows_msvc2017_x86", "windows_msvc2017_x64"]
           }
         - {
+            creator_version: 4.10.2,
             qt_version: 5.13.1,
-            creator_version: 4.10.1,
+            not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32", "mac_x64"]
+          }
+        - {
+            creator_version: 4.11.2,
+            qt_version: 5.14.1,
+            not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32"]
+          }
+        - {
+            creator_version: 4.12.0,
+            qt_version: 5.14.2,
             not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32"]
           }
 
@@ -337,7 +347,7 @@ jobs:
       matrix:
         support:
         - {
-            creator_version: 4.7.0,
+            creator_version: 4.7.2,
             not_supported_platforms: ["windows_msvc2017_x64", "windows_msvc2017_x86", "windows_vs2015_64", "windows_vs2015_32"]
           }
         - {
@@ -345,7 +355,15 @@ jobs:
             not_supported_platforms: ["windows_vs2015_32", "windows_msvc2017_x86", "windows_msvc2017_x64"]
           }
         - {
-            creator_version: 4.10.1,
+            creator_version: 4.10.2,
+            not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32", "mac_x64"]
+          }
+        - {
+            creator_version: 4.11.2,
+            not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32"]
+          }
+        - {
+            creator_version: 4.12.0,
             not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32"]
           }
 
@@ -377,11 +395,13 @@ jobs:
         - {
             name: "Linux Latest x64",
             artifact: "Linux-x64.zip",
+            platform: "linux_gcc_64_rhel72",
             os: ubuntu-latest
           }
         - {
             name: "macOS Latest x64",
             artifact: "macOS-x64.zip",
+            platform: "mac_x64",
             os: macos-latest
           }
     needs: release

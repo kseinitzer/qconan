@@ -71,21 +71,34 @@ List of implemented features.
 
 The PATH information provided by conan will be used to parametrize the run-settings of the active project.
 
+#### linux support
+
+Added support for following QtCreator versions:
+
+  - 4.7.2 x64
+  - 4.8.2 x64
+  - 4.10.1 x64
+  - 4.11.2 x64
+  - 4.12.0 x64
+
 #### mac support
 
 Added support for following QtCreator versions:
 
-  - 4.7.0
+  - 4.7.2
   - 4.8.2
-  - 4.10.1
+  - 4.10.2
+  - 4.11.2
+  - 4.12.0
 
 #### windows support
 
 Added support for following QtCreator versions:
 
   - 4.8.2 VS2015 32-bit
-  - 4.10.1 VS2017 32-bit
-  - 4.10.1 VS2017 64-bit
+  - 4.10.1 VS2017 32/64-bit
+  - 4.11.2 VS2017 32/64-bit
+  - 4.12.0 VS2017 32/64-bit
 
 ### 0.1.0
 

@@ -12,6 +12,11 @@ namespace ProjectExplorer {
   class Target;
 } // namespace ProjectExplorer
 
+namespace Utils {
+  class SynchronousProcessResponse;
+  class SynchronousProcess;
+} // namespace Utils
+
 namespace conan {
   namespace Internal {
 
@@ -61,6 +66,9 @@ namespace conan {
       void write(const QString& text) const;
 
       static ProjectExplorer::Target* currentTarget();
+      static Utils::SynchronousProcessResponse runBlocking(
+          Utils::SynchronousProcess& process, const QString& exe,
+          const QStringList& args);
 
       QString currentBuildDir() const;
 
