@@ -68,12 +68,12 @@ namespace conan {
 
       Utils::SynchronousProcess process;
       process.setWorkingDirectory(directory.path());
-      process.setTimeoutS(5); // TODO: Must run completly asynchron because
-                              // downloads may take a lot of time
-      Utils::SynchronousProcessResponse response =
-          process.runBlocking(conanBinPath, installCommand);
-      if (response.result != Utils::SynchronousProcessResponse::Finished)
+      process.setTimeoutS(5);
+      if (runBlocking(process, conanBinPath, installCommand).result !=
+          Utils::SynchronousProcessResponse::Finished)
+      {
         return {};
+      }
 
       _lastInstallDir = directory.canonicalPath();
 
@@ -310,12 +310,23 @@ namespace conan {
     ProjectExplorer::Target* conanPlugin::currentTarget()
     {
       auto prjTree = ProjectExplorer::ProjectTree::instance();
-#if QTCREATOR_MAJOR == 4 && QTCREATOR_MINOR >= 11
+#if QTCREATOR_MAJOR == 4 && QTCREATOR_MINOR >= 12
       return prjTree->currentTarget();
 #else
       if (auto prj = prjTree->currentProject(); prj)
         return prj->activeTarget();
       return nullptr;
+#endif
+    }
+
+    Utils::SynchronousProcessResponse conanPlugin::runBlocking(
+        Utils::SynchronousProcess& process, const QString& exe,
+        const QStringList& args)
+    {
+#if QTCREATOR_MAJOR == 4 && QTCREATOR_MINOR >= 11
+      return process.runBlocking({exe, args});
+#else
+      return process.runBlocking(exe, args);
 #endif
     }
 

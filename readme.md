@@ -6,7 +6,7 @@ Provide conan support for QtCreator.
 
 ## Introduction
 
-Basically working with conan solves a lot of issues but brings additional overhead when it comes to IDE topics. In the case of QtCreator a typical work-flow will look like: 
+Working with conan solves a lot of issues but brings additional overhead when it comes to IDE topics. In the case of QtCreator a typical work-flow will look like: 
 
 1. create a build folder and change into the folder
 2. call conan install .. -g virtualenv to create the virtual environment files needed
@@ -27,37 +27,98 @@ All configuration settings in a kit are realized by KitAspect implementations. A
 
 The existing infrastructure should be reused as efficient as possible. For example  OsSpecificAspects::pathListSeparator(OsType) and HostOsInfo::hostOs()
 
+## Install
+
+  - Close all open instances of QtCreator.
+  - Download the plugin zip that matches your architecture and QtCreator version and extract the plugin.
+  - Place the plugin in your QtCreator installation directory in <QtInstallDir>/lib/qtcreator/plugins.
+  - Start QtCreator and check if the plugin is listed in the Plugin dialog. Menubar>Help/About Plugins. The conan plugin should be installed now. 
+
 ## Help
 
 Configuration options can be provided by the qconan.ini file placed beside the project file. The following settings can be taken:
 
  - global/path
  - global/installFlags
+ - environment/useLibPath
+ - environment/useBinPath
 
-All fields are optional. If the path key is given, the value is interpreted as the path to the conanfile.py. If the key is not used the plugin tries to find a conanfile.py on the same level as the root project and one level above. If the installFlags key is given the value will be added to every conan install command.
+All fields are optional.
+
+### global/path
+
+If the path key is given, the value is interpreted as the path to the conanfile.py. If the key is not used the plugin tries to find a conanfile.py on the same level as the root project and one level above. 
+
+### global/installFlags
+
+If the installFlags key is given the value will be added to every conan install command.
+
+### environment/useLibPath
+
+Add the library path of each dependency to the PATH run-environment variable in the project options. This can be used on a windows system to provide the OS the needed information, to find referenced DLL's from the package dependency tree.
+
+### environment/useBinPath
+
+Add the binary path of each dependency to the PATH run-environment variable in the project options. This can be used on a windows system to provide the OS the needed information, to find referenced DLL's from the package dependency tree.
 
 ## Features
 
-This section lists some top-level ideas on how to simplify the conan usage on a feature level. 
+List of implemented features.
 
-### dependency tree
+### 0.2.0
 
-A graphical dependency tree to visualize the package dependency including all override and package options.
+#### use package PATH information for run-settings
 
-### conan kit
+The PATH information provided by conan will be used to parametrize the run-settings of the active project.
 
-A special build kit directly derived from a conan file. The environment variables from the conan file will be used to parametrize the kit's environment. This way QtCreator can be started without any special environment. 
+#### linux support
 
-The kit must be set up with the correct toolchain values. KitInformation.cpp - ToolChainKitAspect may help.
+Added support for following QtCreator versions:
 
-### dependency generator
+  - 4.7.2 x64
+  - 4.8.2 x64
+  - 4.10.1 x64
+  - 4.11.2 x64
+  - 4.12.0 x64
 
-A custom conan generator that creates an easy parseable file. 
+#### mac support
 
-### automatic conanfile detection
+Added support for following QtCreator versions:
 
-In case a new project is loaded the conan plugin will search for a conanfile.py and ask the user if the conan plugin should take care of this project. This setting shall be changeable in the project related configuration widget.
+  - 4.7.2
+  - 4.8.2
+  - 4.10.2
+  - 4.11.2
+  - 4.12.0
 
-### conan profile
+#### windows support
 
-Sometimes it is necessary to work on the same package with different profiles. A conan profile is similar to the kit approach from QtCreator. This feature should allow linking one conan profile to one QtCreator kit. 
+Added support for following QtCreator versions:
+
+  - 4.8.2 VS2015 32-bit
+  - 4.10.1 VS2017 32/64-bit
+  - 4.11.2 VS2017 32/64-bit
+  - 4.12.0 VS2017 32/64-bit
+
+### 0.1.0
+
+#### detect change of conanfile.py
+
+In case the conanfile.py is updated, the conan plugin will reinstall the package so that the changes will take place immediately. 
+
+#### use >General Messages< tab for diagnostic information
+
+Information from the conan plugin is displayed in the **General Messages** tab. Messages from the conan plugin begin are prefixed by **conan plugin:**.
+
+#### custom conan installation flags
+
+Allow special needed flags to be added to the automatically executed install command. The flags can be defined by a project-specific configuration file. See section help for more information.
+
+#### automatic conan install if build folder change
+
+In case the build directory is changed the conan install command will be triggered automatically.
+
+#### automatic conan install if target change
+
+In case the build target is changed (e.g. from debug to release) the conan install command will be triggered automatically.
+
