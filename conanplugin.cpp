@@ -138,20 +138,12 @@ namespace conan {
 
       const QString settingsPath = QDir(project->projectDirectory().toString())
                                        .filePath(QStringLiteral("qconan.ini"));
-      QSettings settings(settingsPath, QSettings::Format::IniFormat);
 
-      if (QFileInfo(settingsPath).exists())
+      if (auto newConfig = PluginConfig::fromFile(settingsPath); newConfig)
       {
+        _config = newConfig.value();
         write(tr("Found settings file"));
       }
-
-      _config =
-          PluginConfig(settings.value(QStringLiteral("global/path")).toString(),
-              settings.value(QStringLiteral("global/installFlags")).toString(),
-              settings.value(QStringLiteral("environment/useLibPath"), false)
-                  .toBool(),
-              settings.value(QStringLiteral("environment/useBinPath"), false)
-                  .toBool());
 
       if (const auto path = conanFilePath(); !path.isEmpty())
       {

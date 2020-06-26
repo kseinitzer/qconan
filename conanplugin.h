@@ -1,5 +1,6 @@
 #pragma once
 
+#include "PluginConfig.h"
 #include "conan_global.h"
 #include <QDir>
 #include <QFileSystemWatcher>

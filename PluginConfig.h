@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QString>
+#include <optional>
 
 class PluginConfig
 {
@@ -12,12 +13,16 @@ private:
 
 public:
   PluginConfig() = default;
-  PluginConfig(const QString& path, const QString& installFlags,
-      const bool useBinPath, const bool useLibPath)
-      : _conanFilePath {path}, _installFlags {installFlags},
-        _useLibPath {useLibPath}, _useBinPath {useBinPath}
-  {
-  }
+
+  ///
+  /// \brief fromFile Provide a way how to load the configuration from a file
+  /// \details The referenced file must be encode as ASCII ini file.
+  /// \param pathToFile Absolut or relative path to the configuration file
+  /// \return A valid PluginConfig instance as value or in case of an failure no
+  /// valid reference.
+  ///
+  static std::optional< PluginConfig > fromFile(QString pathToFile);
+
   bool useLibraryPathAsEnvironmentPath() const
   {
     return _useLibPath;
