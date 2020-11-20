@@ -242,8 +242,11 @@ namespace conan {
           }
           runEnv->setUserEnvironmentChanges(newPaths);
         }
+        else
+        {
+          write(tr("Error, no run environment available"));
+        }
       }
-      return;
     }
 
     QString conanPlugin::conanFilePath() const
