@@ -100,6 +100,8 @@ namespace conan {
 
       connect(&_conanFileWatcher, &QFileSystemWatcher::fileChanged, this,
           &conanPlugin::setupBuildDirForce);
+      connect(&_settingsFileWatcher, &QFileSystemWatcher::fileChanged, this,
+          &conanPlugin::setupBuildDirForce);
 
       return true;
     }
@@ -118,6 +120,9 @@ namespace conan {
           &conanPlugin::setNewProject);
 
       disconnect(&_conanFileWatcher, &QFileSystemWatcher::fileChanged, this,
+          &conanPlugin::setupBuildDirForce);
+
+      disconnect(&_settingsFileWatcher, &QFileSystemWatcher::fileChanged, this,
           &conanPlugin::setupBuildDirForce);
 
       for (const auto& con : _depConnections)
@@ -300,6 +305,9 @@ namespace conan {
 
       if (auto newConfig = PluginConfig::fromFile(settingsPath); newConfig)
       {
+        _conanFileWatcher.removePaths(_conanFileWatcher.files());
+        _conanFileWatcher.addPath(settingsPath);
+
         _config = newConfig.value();
         write(tr("Found settings file"));
       }

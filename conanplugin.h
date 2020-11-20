@@ -80,6 +80,7 @@ namespace conan {
     private:
       QString _lastInstallDir;
       QFileSystemWatcher _conanFileWatcher;
+      QFileSystemWatcher _settingsFileWatcher;
       QChar _pathSeparator;
       std::list< QMetaObject::Connection > _depConnections;
     };
