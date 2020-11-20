@@ -136,14 +136,7 @@ namespace conan {
         return;
       }
 
-      const QString settingsPath = QDir(project->projectDirectory().toString())
-                                       .filePath(QStringLiteral("qconan.ini"));
-
-      if (auto newConfig = PluginConfig::fromFile(settingsPath); newConfig)
-      {
-        _config = newConfig.value();
-        write(tr("Found settings file"));
-      }
+      loadProjectConfiguration(project);
 
       if (const auto path = conanFilePath(); !path.isEmpty())
       {
@@ -291,6 +284,22 @@ namespace conan {
         }
       }
       return nullptr;
+    }
+
+    void conanPlugin::loadProjectConfiguration(
+        const ProjectExplorer::Project* project)
+    {
+      if (project == nullptr)
+        return;
+
+      const QString settingsPath = QDir(project->projectDirectory().toString())
+                                       .filePath(QStringLiteral("qconan.ini"));
+
+      if (auto newConfig = PluginConfig::fromFile(settingsPath); newConfig)
+      {
+        _config = newConfig.value();
+        write(tr("Found settings file"));
+      }
     }
 
     void conanPlugin::write(const QString& text) const

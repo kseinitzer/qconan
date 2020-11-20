@@ -64,6 +64,8 @@ namespace conan {
       ProjectExplorer::EnvironmentAspect* runEnvironmentAspect() const;
 
     private:
+      void loadProjectConfiguration(const ProjectExplorer::Project* project);
+
       void write(const QString& text) const;
 
       static ProjectExplorer::Target* currentTarget();
