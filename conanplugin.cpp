@@ -191,6 +191,9 @@ namespace conan {
 
     void conanPlugin::setupBuildDir(bool forceInstall)
     {
+      loadProjectConfiguration(
+          ProjectExplorer::ProjectTree::instance()->currentProject());
+
       const QString buildPath = currentBuildDir();
       if (buildPath.isEmpty())
       {
