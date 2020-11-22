@@ -194,7 +194,7 @@ jobs:
       if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       shell: cmake -P {0}
       run: |
-        if ("${{ runner.os }}" STREQUAL "Windows" AND NOT "x${{ matrix.config.environment_script }}" STREQUAL "x")
+        if ("${{ runner.os }}" STREQUAL "Windows" AND NOT "${{ matrix.config.environment_script }}" STREQUAL "x")
           execute_process(
             COMMAND "${{ matrix.config.environment_script }}" && set
             OUTPUT_FILE environment_script_output.txt
@@ -205,7 +205,7 @@ jobs:
               set(ENV{${CMAKE_MATCH_1}} "${CMAKE_MATCH_2}")
 
               # Set for other steps
-              message("::set-env name=${CMAKE_MATCH_1}::${CMAKE_MATCH_2}")
+              file(APPEND $ENV{GITHUB_ENV} "${CMAKE_MATCH_1}=${CMAKE_MATCH_2}")
             endif()
           endforeach()
         endif()
@@ -234,6 +234,7 @@ jobs:
           set(ENV{PATH} "${{ steps.qt.outputs.qt_dir }}/bin/:$ENV{PATH}")
           set(ENV{LD_LIBRARY_PATH} "qtcreator/lib/Qt/lib:$ENV{LD_LIBRARY_PATH}")
         endif()
+
 
         include(ProcessorCount)
         ProcessorCount(N)
