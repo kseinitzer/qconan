@@ -190,15 +190,17 @@ jobs:
           )
         endif()
 
-    - name: Configure
+    - name: Build
       if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       shell: cmake -P {0}
       run: |
-        if ("${{ runner.os }}" STREQUAL "Windows" AND NOT "${{ matrix.config.environment_script }}" STREQUAL "x")
+        # configure
+        if ("${{ runner.os }}" STREQUAL "Windows" AND NOT "x${{ matrix.config.environment_script }}" STREQUAL "x")
           execute_process(
             COMMAND "${{ matrix.config.environment_script }}" && set
             OUTPUT_FILE environment_script_output.txt
           )
+
           file(STRINGS environment_script_output.txt output_lines)
           foreach(line IN LISTS output_lines)
             if (line MATCHES "^([a-zA-Z0-9_-]+)=(.*)$")
@@ -224,16 +226,15 @@ jobs:
           message(FATAL_ERROR "qmake failure")
         endif()
 
-    - name: Build
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
-      shell: cmake -P {0}
-      run: |
+        # build
         if ("${{ runner.os }}" STREQUAL "Windows")
           set(ENV{PATH} "${{ steps.qt.outputs.qt_dir }}/bin/;$ENV{PATH}")
         else()
           set(ENV{PATH} "${{ steps.qt.outputs.qt_dir }}/bin/:$ENV{PATH}")
           set(ENV{LD_LIBRARY_PATH} "qtcreator/lib/Qt/lib:$ENV{LD_LIBRARY_PATH}")
         endif()
+
+
 
 
         include(ProcessorCount)
