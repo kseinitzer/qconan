@@ -100,6 +100,8 @@ namespace conan {
 
       connect(&_conanFileWatcher, &QFileSystemWatcher::fileChanged, this,
           &conanPlugin::setupBuildDirForce);
+      connect(&_settingsFileWatcher, &QFileSystemWatcher::fileChanged, this,
+          &conanPlugin::setupBuildDirForce);
 
       return true;
     }
@@ -120,6 +122,9 @@ namespace conan {
       disconnect(&_conanFileWatcher, &QFileSystemWatcher::fileChanged, this,
           &conanPlugin::setupBuildDirForce);
 
+      disconnect(&_settingsFileWatcher, &QFileSystemWatcher::fileChanged, this,
+          &conanPlugin::setupBuildDirForce);
+
       for (const auto& con : _depConnections)
         disconnect(con);
       _depConnections.clear();
@@ -136,22 +141,7 @@ namespace conan {
         return;
       }
 
-      const QString settingsPath = QDir(project->projectDirectory().toString())
-                                       .filePath(QStringLiteral("qconan.ini"));
-      QSettings settings(settingsPath, QSettings::Format::IniFormat);
-
-      if (QFileInfo(settingsPath).exists())
-      {
-        write(tr("Found settings file"));
-      }
-
-      _config =
-          PluginConfig(settings.value(QStringLiteral("global/path")).toString(),
-              settings.value(QStringLiteral("global/installFlags")).toString(),
-              settings.value(QStringLiteral("environment/useLibPath"), false)
-                  .toBool(),
-              settings.value(QStringLiteral("environment/useBinPath"), false)
-                  .toBool());
+      loadProjectConfiguration(project);
 
       if (const auto path = conanFilePath(); !path.isEmpty())
       {
@@ -206,6 +196,9 @@ namespace conan {
 
     void conanPlugin::setupBuildDir(bool forceInstall)
     {
+      loadProjectConfiguration(
+          ProjectExplorer::ProjectTree::instance()->currentProject());
+
       const QString buildPath = currentBuildDir();
       if (buildPath.isEmpty())
       {
@@ -249,8 +242,11 @@ namespace conan {
           }
           runEnv->setUserEnvironmentChanges(newPaths);
         }
+        else
+        {
+          write(tr("Error, no run environment available"));
+        }
       }
-      return;
     }
 
     QString conanPlugin::conanFilePath() const
@@ -299,6 +295,25 @@ namespace conan {
         }
       }
       return nullptr;
+    }
+
+    void conanPlugin::loadProjectConfiguration(
+        const ProjectExplorer::Project* project)
+    {
+      if (project == nullptr)
+        return;
+
+      const QString settingsPath = QDir(project->projectDirectory().toString())
+                                       .filePath(QStringLiteral("qconan.ini"));
+
+      if (auto newConfig = PluginConfig::fromFile(settingsPath); newConfig)
+      {
+        _conanFileWatcher.removePaths(_conanFileWatcher.files());
+        _conanFileWatcher.addPath(settingsPath);
+
+        _config = newConfig.value();
+        write(tr("Found settings file"));
+      }
     }
 
     void conanPlugin::write(const QString& text) const

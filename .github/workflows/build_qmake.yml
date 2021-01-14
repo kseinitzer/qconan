@@ -14,39 +14,12 @@ jobs:
       matrix:
         support:
         - {
-            creator_version: 4.7.2,
-            qt_version: 5.11.1,
-            not_supported_platforms: ["windows_msvc2017_x64", "windows_msvc2017_x86", "windows_vs2015_64", "windows_vs2015_32"]
-          }
-        - {
-            creator_version: 4.8.2,
-            qt_version: 5.12.4,
-            not_supported_platforms: ["windows_vs2015_32", "windows_msvc2017_x86", "windows_msvc2017_x64"]
-          }
-        - {
-            creator_version: 4.10.2,
-            qt_version: 5.13.1,
-            not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32", "mac_x64"]
-          }
-        - {
-            creator_version: 4.11.2,
-            qt_version: 5.14.1,
-            not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32"]
-          }
-        - {
             creator_version: 4.12.0,
-            qt_version: 5.14.2,
+            qt_version: 5.13.2,
             not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32"]
           }
 
         config:
-        - {
-            name: "Windows Latest x64 VS2015",
-            artifact: "Windows-vs2015-x64.zip",
-            os: windows-latest,
-            platform: "windows_vs2015_64",
-            environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
-          }
         - {
             name: "Windows Latest x64 VS2017",
             artifact: "Windows-vs2017-x64.zip",
@@ -55,30 +28,10 @@ jobs:
             environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
           }
         - {
-            name: "Windows Latest x86 VS2015",
-            artifact: "Windows-vs2015-x86.zip",
-            os: windows-latest,
-            platform: "windows_vs2015_32",
-            environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars32.bat"
-          }
-        - {
-            name: "Windows Latest x86 VS2017",
-            artifact: "Windows-vs2017-x86.zip",
-            os: windows-latest,
-            platform: "windows_msvc2017_x86",
-            environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars32.bat"
-          }
-        - {
             name: "Linux Latest x64",
             artifact: "Linux-x64.zip",
             platform: "linux_gcc_64_rhel72",
             os: ubuntu-latest
-          }
-        - {
-            name: "macOS Latest x64",
-            artifact: "macOS-x64.zip",
-            platform: "mac_x64",
-            os: macos-latest
           }
 
     steps:
@@ -237,22 +190,24 @@ jobs:
           )
         endif()
 
-    - name: Configure
+    - name: Build
       if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       shell: cmake -P {0}
       run: |
+        # configure
         if ("${{ runner.os }}" STREQUAL "Windows" AND NOT "x${{ matrix.config.environment_script }}" STREQUAL "x")
           execute_process(
             COMMAND "${{ matrix.config.environment_script }}" && set
             OUTPUT_FILE environment_script_output.txt
           )
+
           file(STRINGS environment_script_output.txt output_lines)
           foreach(line IN LISTS output_lines)
             if (line MATCHES "^([a-zA-Z0-9_-]+)=(.*)$")
               set(ENV{${CMAKE_MATCH_1}} "${CMAKE_MATCH_2}")
 
               # Set for other steps
-              message("::set-env name=${CMAKE_MATCH_1}::${CMAKE_MATCH_2}")
+              file(APPEND $ENV{GITHUB_ENV} "${CMAKE_MATCH_1}=${CMAKE_MATCH_2}")
             endif()
           endforeach()
         endif()
@@ -271,16 +226,16 @@ jobs:
           message(FATAL_ERROR "qmake failure")
         endif()
 
-    - name: Build
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
-      shell: cmake -P {0}
-      run: |
+        # build
         if ("${{ runner.os }}" STREQUAL "Windows")
           set(ENV{PATH} "${{ steps.qt.outputs.qt_dir }}/bin/;$ENV{PATH}")
         else()
           set(ENV{PATH} "${{ steps.qt.outputs.qt_dir }}/bin/:$ENV{PATH}")
           set(ENV{LD_LIBRARY_PATH} "qtcreator/lib/Qt/lib:$ENV{LD_LIBRARY_PATH}")
         endif()
+
+
+
 
         include(ProcessorCount)
         ProcessorCount(N)
@@ -347,39 +302,11 @@ jobs:
       matrix:
         support:
         - {
-            creator_version: 4.7.2,
-            not_supported_platforms: ["windows_msvc2017_x64", "windows_msvc2017_x86", "windows_vs2015_64", "windows_vs2015_32"]
-          }
-        - {
-            creator_version: 4.8.2,
-            not_supported_platforms: ["windows_vs2015_32", "windows_msvc2017_x86", "windows_msvc2017_x64"]
-          }
-        - {
-            creator_version: 4.10.2,
-            not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32", "mac_x64"]
-          }
-        - {
-            creator_version: 4.11.2,
-            not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32"]
-          }
-        - {
             creator_version: 4.12.0,
             not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32"]
           }
 
         config:
-        - {
-            name: "Windows Latest x64 VS2015",
-            artifact: "Windows-vs2015-x64.zip",
-            platform: "windows_vs2015_64",
-            os: windows-latest
-          }
-        - {
-            name: "Windows Latest x86 VS2015",
-            artifact: "Windows-vs2015-x86.zip",
-            platform: "windows_vs2015_32",
-            os: windows-latest
-          }
         - {
             name: "Windows Latest x64 VS2017",
             artifact: "Windows-vs2017-x64.zip",
@@ -387,22 +314,10 @@ jobs:
             os: windows-latest
           }
         - {
-            name: "Windows Latest x86 VS2017",
-            artifact: "Windows-vs2017-x86.zip",
-            platform: "windows_msvc2017_x86",
-            os: windows-latest
-          }
-        - {
             name: "Linux Latest x64",
             artifact: "Linux-x64.zip",
             platform: "linux_gcc_64_rhel72",
             os: ubuntu-latest
-          }
-        - {
-            name: "macOS Latest x64",
-            artifact: "macOS-x64.zip",
-            platform: "mac_x64",
-            os: macos-latest
           }
     needs: release
 
