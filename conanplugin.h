@@ -4,6 +4,7 @@
 #include "conan_global.h"
 #include <QDir>
 #include <QFileSystemWatcher>
+#include <QFutureInterface>
 #include <QProcess>
 #include <extensionsystem/iplugin.h>
 #include <projectexplorer/projecttree.h>
@@ -74,6 +75,7 @@ namespace conan {
       PluginConfig _config;
 
     private:
+      std::unique_ptr< QFutureInterface< void > > _progress;
       QProcess _conanBin;
       QString _lastInstallDir;
       QFileSystemWatcher _conanFileWatcher;
