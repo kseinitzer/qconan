@@ -67,10 +67,6 @@ namespace conan {
 
       _lastInstallDir = directory.canonicalPath();
 
-      connect(&_conanBin,
-          QOverload< int, QProcess::ExitStatus >::of(&QProcess::finished), this,
-          &conanPlugin::onInstallFinished);
-
       _conanBin.setWorkingDirectory(directory.path());
       _conanBin.start(conanBinPath, installCommand);
 
@@ -99,6 +95,17 @@ namespace conan {
           &conanPlugin::setupBuildDirForce);
       connect(&_settingsFileWatcher, &QFileSystemWatcher::fileChanged, this,
           &conanPlugin::setupBuildDirForce);
+
+      connect(&_conanBin,
+          QOverload< int, QProcess::ExitStatus >::of(&QProcess::finished), this,
+          &conanPlugin::onInstallFinished);
+      connect(&_conanBin, &QProcess::readyRead, [=]() {
+        if (auto string = QString::fromLocal8Bit(_conanBin.readAll());
+            !string.isEmpty())
+          write(string);
+      });
+      _conanBin.setProcessChannelMode(
+          QProcess::ProcessChannelMode::MergedChannels);
 
       return true;
     }
@@ -283,6 +290,7 @@ namespace conan {
         return;
       }
 
+      write(tr("Finished conan install, parse package information"));
       const QDir& directory(_lastInstallDir);
       const BuildInfo buildInfo = BuildInfo::fromJsonFile(
           directory.filePath(QStringLiteral("conanbuildinfo.json")));
