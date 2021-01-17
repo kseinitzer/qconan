@@ -219,14 +219,20 @@ namespace conan {
       {
         const BuildInfo buildInfo = conanInstall(conanPath, buildPath);
 
-        write(tr("Use library path information from conan >%1<")
-                  .arg(buildInfo.libraryPath().join(":")));
-
         QStringList appendPath = buildInfo.environmentPath();
         if (_config.useLibraryPathAsEnvironmentPath())
+        {
           appendPath += buildInfo.libraryPath();
+          write(tr("Use library path information from conan"));
+        }
         if (_config.useBinaryPathAsEnvironmentPath())
+        {
           appendPath += buildInfo.binaryPath();
+          write(tr("Use binary path information from conan"));
+        }
+
+        write(tr("Use path information from conan >%1<")
+                  .arg(appendPath.join(":")));
 
         appendPath = appendPath.toSet().values();
 
@@ -238,6 +244,7 @@ namespace conan {
             auto envItem = Utils::EnvironmentItem(
                 QStringLiteral("PATH"), path, Utils::NameValueItem::Append);
             newPaths.push_back(envItem);
+            write(tr("Add path to env >%1<").arg(path));
           }
           runEnv->setUserEnvironmentChanges(newPaths);
         }
