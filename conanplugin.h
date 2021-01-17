@@ -7,6 +7,7 @@
 #include <QFutureInterface>
 #include <QProcess>
 #include <extensionsystem/iplugin.h>
+#include <memory>
 #include <projectexplorer/projecttree.h>
 
 class BuildInfo;

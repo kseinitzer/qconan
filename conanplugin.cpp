@@ -74,8 +74,14 @@ namespace conan {
       _conanBin.waitForStarted();
 
       _progress = std::make_unique< QFutureInterface< void > >();
+
+#if QTCREATOR_MAJOR == 4 && QTCREATOR_MINOR <= 12
+      const auto id = Core::Id("qconan");
+#else
+      const auto id = Utils::Id("qconan");
+#endif
       const auto progress = Core::ProgressManager::addTask(
-          _progress->future(), "conan install", Utils::Id("qconan"));
+          _progress->future(), "conan install", id);
       QObject::connect(progress, &Core::FutureProgress::canceled, this,
           [this] { _conanBin.kill(); });
       _progress->setProgressRange(0, 100);
