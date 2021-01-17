@@ -64,7 +64,7 @@ QStringList BuildInfo::environmentPath() const
       envInfoObj.type() == QVariant::Type::Map)
   {
     const QVariantMap envInfo = envInfoObj.toMap();
-    return envInfo.value(envPathKey).toStringList().toSet().toList();
+    return envInfo.value(envPathKey).toStringList().toSet().values();
   }
   return {};
 }

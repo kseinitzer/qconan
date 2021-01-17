@@ -229,7 +229,7 @@ namespace conan {
         if (_config.useBinaryPathAsEnvironmentPath())
           appendPath += buildInfo.binaryPath();
 
-        appendPath = appendPath.toSet().toList();
+        appendPath = appendPath.toSet().values();
 
         if (auto runEnv = runEnvironmentAspect(); runEnv)
         {
