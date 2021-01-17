@@ -4,6 +4,7 @@
 #include "conan_global.h"
 #include <QDir>
 #include <QFileSystemWatcher>
+#include <QProcess>
 #include <extensionsystem/iplugin.h>
 #include <projectexplorer/projecttree.h>
 
@@ -12,11 +13,6 @@ namespace ProjectExplorer {
   class EnvironmentAspect;
   class Target;
 } // namespace ProjectExplorer
-
-namespace Utils {
-  class SynchronousProcessResponse;
-  class SynchronousProcess;
-} // namespace Utils
 
 namespace conan {
   namespace Internal {
@@ -64,14 +60,12 @@ namespace conan {
       ProjectExplorer::EnvironmentAspect* runEnvironmentAspect() const;
 
     private:
+      void onInstallFinished(int exitCode, QProcess::ExitStatus exitStatus);
       void loadProjectConfiguration(const ProjectExplorer::Project* project);
 
       void write(const QString& text) const;
 
       static ProjectExplorer::Target* currentTarget();
-      static Utils::SynchronousProcessResponse runBlocking(
-          Utils::SynchronousProcess& process, const QString& exe,
-          const QStringList& args);
 
       QString currentBuildDir() const;
 
@@ -80,6 +74,7 @@ namespace conan {
       PluginConfig _config;
 
     private:
+      QProcess _conanBin;
       QString _lastInstallDir;
       QFileSystemWatcher _conanFileWatcher;
       QFileSystemWatcher _settingsFileWatcher;
