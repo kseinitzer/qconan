@@ -146,8 +146,9 @@ namespace conan {
       if (const auto path = conanFilePath(); !path.isEmpty())
       {
         _conanFileWatcher.removePaths(_conanFileWatcher.files());
-        _conanFileWatcher.addPath(path);
+        watchConanfile(path);
       }
+
       updateDepConnections();
     }
 
@@ -188,9 +189,7 @@ namespace conan {
 
     void conanPlugin::setupBuildDirForce()
     {
-      if (auto conanPath = conanFilePath();
-          !_conanFileWatcher.files().contains(conanPath))
-        _conanFileWatcher.addPath(conanPath);
+      watchConanfile(conanFilePath());
       setupBuildDir(true);
     }
 
@@ -308,8 +307,7 @@ namespace conan {
 
       if (auto newConfig = PluginConfig::fromFile(settingsPath); newConfig)
       {
-        _conanFileWatcher.removePaths(_conanFileWatcher.files());
-        _conanFileWatcher.addPath(settingsPath);
+        watchConanfile(settingsPath);
 
         _config = newConfig.value();
         write(tr("Found settings file"));
@@ -364,6 +362,16 @@ namespace conan {
       }
 
       return {};
+    }
+
+    void conanPlugin::watchConanfile(const QString& path)
+    {
+      QFileInfo conanFile(path);
+      if (auto conanPath = conanFile.canonicalFilePath();
+          !_conanFileWatcher.files().contains(conanPath))
+      {
+        _conanFileWatcher.addPath(conanPath);
+      }
     }
 
   } // namespace Internal

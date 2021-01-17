@@ -75,6 +75,8 @@ namespace conan {
 
       QString currentBuildDir() const;
 
+      void watchConanfile(const QString& path);
+
       PluginConfig _config;
 
     private:
