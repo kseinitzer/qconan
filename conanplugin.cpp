@@ -146,8 +146,9 @@ namespace conan {
       if (const auto path = conanFilePath(); !path.isEmpty())
       {
         _conanFileWatcher.removePaths(_conanFileWatcher.files());
-        _conanFileWatcher.addPath(path);
+        watchConanfile(path);
       }
+
       updateDepConnections();
     }
 
@@ -188,9 +189,7 @@ namespace conan {
 
     void conanPlugin::setupBuildDirForce()
     {
-      if (auto conanPath = conanFilePath();
-          !_conanFileWatcher.files().contains(conanPath))
-        _conanFileWatcher.addPath(conanPath);
+      watchConanfile(conanFilePath());
       setupBuildDir(true);
     }
 
@@ -220,16 +219,22 @@ namespace conan {
       {
         const BuildInfo buildInfo = conanInstall(conanPath, buildPath);
 
-        write(tr("Use library path information from conan >%1<")
-                  .arg(buildInfo.libraryPath().join(":")));
-
         QStringList appendPath = buildInfo.environmentPath();
         if (_config.useLibraryPathAsEnvironmentPath())
+        {
           appendPath += buildInfo.libraryPath();
+          write(tr("Use library path information from conan"));
+        }
         if (_config.useBinaryPathAsEnvironmentPath())
+        {
           appendPath += buildInfo.binaryPath();
+          write(tr("Use binary path information from conan"));
+        }
 
-        appendPath = appendPath.toSet().toList();
+        write(tr("Use path information from conan >%1<")
+                  .arg(appendPath.join(":")));
+
+        appendPath = appendPath.toSet().values();
 
         if (auto runEnv = runEnvironmentAspect(); runEnv)
         {
@@ -239,6 +244,7 @@ namespace conan {
             auto envItem = Utils::EnvironmentItem(
                 QStringLiteral("PATH"), path, Utils::NameValueItem::Append);
             newPaths.push_back(envItem);
+            write(tr("Add path to env >%1<").arg(path));
           }
           runEnv->setUserEnvironmentChanges(newPaths);
         }
@@ -308,8 +314,7 @@ namespace conan {
 
       if (auto newConfig = PluginConfig::fromFile(settingsPath); newConfig)
       {
-        _conanFileWatcher.removePaths(_conanFileWatcher.files());
-        _conanFileWatcher.addPath(settingsPath);
+        watchConanfile(settingsPath);
 
         _config = newConfig.value();
         write(tr("Found settings file"));
@@ -364,6 +369,16 @@ namespace conan {
       }
 
       return {};
+    }
+
+    void conanPlugin::watchConanfile(const QString& path)
+    {
+      QFileInfo conanFile(path);
+      if (auto conanPath = conanFile.canonicalFilePath();
+          !_conanFileWatcher.files().contains(conanPath))
+      {
+        _conanFileWatcher.addPath(conanPath);
+      }
     }
 
   } // namespace Internal
