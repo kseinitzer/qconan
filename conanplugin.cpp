@@ -13,6 +13,8 @@
 #include <coreplugin/icontext.h>
 #include <coreplugin/icore.h>
 #include <coreplugin/messagemanager.h>
+#include <coreplugin/progressmanager/futureprogress.h>
+#include <coreplugin/progressmanager/progressmanager.h>
 #include <projectexplorer/buildconfiguration.h>
 #include <projectexplorer/environmentaspect.h>
 #include <projectexplorer/kitinformation.h>
@@ -22,7 +24,6 @@
 #include <projectexplorer/runconfiguration.h>
 #include <projectexplorer/target.h>
 #include <utils/environment.h>
-#include <utils/synchronousprocess.h>
 
 namespace {
   const QString kitName = QStringLiteral("conan kit");
@@ -66,16 +67,25 @@ namespace conan {
                 .arg(pathToConanFile)
                 .arg(directory.path()));
 
-      Utils::SynchronousProcess process;
-      process.setWorkingDirectory(directory.path());
-      process.setTimeoutS(5);
-      if (runBlocking(process, conanBinPath, installCommand).result !=
-          Utils::SynchronousProcessResponse::Finished)
-      {
-        return {};
-      }
-
       _lastInstallDir = directory.canonicalPath();
+
+      _conanBin.setWorkingDirectory(directory.path());
+      _conanBin.start(conanBinPath, installCommand);
+      _conanBin.waitForStarted();
+
+      _progress = std::make_unique< QFutureInterface< void > >();
+
+#if QTCREATOR_MAJOR == 4 && QTCREATOR_MINOR <= 12
+      const auto id = Core::Id("qconan");
+#else
+      const auto id = Utils::Id("qconan");
+#endif
+      const auto progress = Core::ProgressManager::addTask(
+          _progress->future(), "conan install", id);
+      QObject::connect(progress, &Core::FutureProgress::canceled, this,
+          [this] { _conanBin.kill(); });
+      _progress->setProgressRange(0, 100);
+      _progress->reportStarted();
 
       return BuildInfo::fromJsonFile(
           directory.filePath(QStringLiteral("conanbuildinfo.json")));
@@ -102,6 +112,17 @@ namespace conan {
           &conanPlugin::setupBuildDirForce);
       connect(&_settingsFileWatcher, &QFileSystemWatcher::fileChanged, this,
           &conanPlugin::setupBuildDirForce);
+
+      connect(&_conanBin,
+          QOverload< int, QProcess::ExitStatus >::of(&QProcess::finished), this,
+          &conanPlugin::onInstallFinished);
+      connect(&_conanBin, &QProcess::readyRead, [=]() {
+        if (auto string = QString::fromLocal8Bit(_conanBin.readAll());
+            !string.isEmpty())
+          write(string);
+      });
+      _conanBin.setProcessChannelMode(
+          QProcess::ProcessChannelMode::MergedChannels);
 
       return true;
     }
@@ -217,41 +238,7 @@ namespace conan {
           !conanPath.isEmpty() &&
           (forceInstall == true || _lastInstallDir != buildPath))
       {
-        const BuildInfo buildInfo = conanInstall(conanPath, buildPath);
-
-        QStringList appendPath = buildInfo.environmentPath();
-        if (_config.useLibraryPathAsEnvironmentPath())
-        {
-          appendPath += buildInfo.libraryPath();
-          write(tr("Use library path information from conan"));
-        }
-        if (_config.useBinaryPathAsEnvironmentPath())
-        {
-          appendPath += buildInfo.binaryPath();
-          write(tr("Use binary path information from conan"));
-        }
-
-        write(tr("Use path information from conan >%1<")
-                  .arg(appendPath.join(":")));
-
-        appendPath = appendPath.toSet().values();
-
-        if (auto runEnv = runEnvironmentAspect(); runEnv)
-        {
-          Utils::EnvironmentItems newPaths;
-          foreach (const auto& path, appendPath)
-          {
-            auto envItem = Utils::EnvironmentItem(
-                QStringLiteral("PATH"), path, Utils::NameValueItem::Append);
-            newPaths.push_back(envItem);
-            write(tr("Add path to env >%1<").arg(path));
-          }
-          runEnv->setUserEnvironmentChanges(newPaths);
-        }
-        else
-        {
-          write(tr("Error, no run environment available"));
-        }
+        conanInstall(conanPath, buildPath);
       }
     }
 
@@ -303,6 +290,70 @@ namespace conan {
       return nullptr;
     }
 
+    void conanPlugin::onInstallFinished(
+        int exitCode, QProcess::ExitStatus exitStatus)
+    {
+      _progress->setProgressValue(80);
+      bool evaluateResult = true;
+      if (exitStatus != QProcess::ExitStatus::NormalExit)
+      {
+        write(tr("Abort conan install: The conan executable exited unexpected, "
+                 "possibly crashed."));
+        evaluateResult = false;
+      }
+      if (exitCode != 0)
+      {
+        write(tr("Abort conan install: The conan executable returned an "
+                 "unexpected return value: %1")
+                  .arg(exitCode));
+        evaluateResult = false;
+      }
+
+      if (evaluateResult)
+      {
+        write(tr("Finished conan install, parse package information"));
+        const QDir& directory(_lastInstallDir);
+        const BuildInfo buildInfo = BuildInfo::fromJsonFile(
+            directory.filePath(QStringLiteral("conanbuildinfo.json")));
+
+        QStringList appendPath = buildInfo.environmentPath();
+        if (_config.useLibraryPathAsEnvironmentPath())
+        {
+          appendPath += buildInfo.libraryPath();
+          write(tr("Use library path information from conan"));
+        }
+        if (_config.useBinaryPathAsEnvironmentPath())
+        {
+          appendPath += buildInfo.binaryPath();
+          write(tr("Use binary path information from conan"));
+        }
+
+        write(tr("Use path information from conan >%1<")
+                  .arg(appendPath.join(":")));
+
+        appendPath = appendPath.toSet().values();
+
+        if (auto runEnv = runEnvironmentAspect(); runEnv)
+        {
+          Utils::EnvironmentItems newPaths;
+          foreach (const auto& path, appendPath)
+          {
+            auto envItem = Utils::EnvironmentItem(
+                QStringLiteral("PATH"), path, Utils::NameValueItem::Append);
+            newPaths.push_back(envItem);
+            write(tr("Add path to env >%1<").arg(path));
+          }
+          runEnv->setUserEnvironmentChanges(newPaths);
+        }
+        else
+        {
+          write(tr("Error, no run environment available"));
+        }
+      }
+      _progress->setProgressValue(100);
+      _progress->reportFinished();
+    }
+
     void conanPlugin::loadProjectConfiguration(
         const ProjectExplorer::Project* project)
     {
@@ -336,17 +387,6 @@ namespace conan {
       if (auto prj = prjTree->currentProject(); prj)
         return prj->activeTarget();
       return nullptr;
-#endif
-    }
-
-    Utils::SynchronousProcessResponse conanPlugin::runBlocking(
-        Utils::SynchronousProcess& process, const QString& exe,
-        const QStringList& args)
-    {
-#if QTCREATOR_MAJOR == 4 && QTCREATOR_MINOR >= 11
-      return process.runBlocking({exe, args});
-#else
-      return process.runBlocking(exe, args);
 #endif
     }
 
