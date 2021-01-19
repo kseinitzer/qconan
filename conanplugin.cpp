@@ -339,7 +339,7 @@ namespace conan {
           foreach (const auto& path, appendPath)
           {
             auto envItem = Utils::EnvironmentItem(
-                QStringLiteral("PATH"), path, Utils::NameValueItem::Append);
+                QStringLiteral("PATH"), path, Utils::NameValueItem::Prepend);
             newPaths.push_back(envItem);
             write(tr("Add path to env >%1<").arg(path));
           }
