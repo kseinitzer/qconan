@@ -117,6 +117,54 @@ private slots:
           << BuildInfo(root) << QStringList()
           << QStringList({"dep1_test", "dep1_test", "dep2_test", "dep2_test"});
     }
+    {
+      QVariantMap dep1;
+      dep1.insert(
+          "lib_paths", QVariant::fromValue(QList< QVariant >(
+                           {QDir::toNativeSeparators("src/../dep1_test")})));
+      dep1.insert("bin_paths", QVariant::fromValue(QList< QVariant >()));
+
+      QList< QVariant > deps = {dep1};
+
+      QVariantMap root;
+      root.insert("dependencies", deps);
+      root.insert("deps_env_info", QVariantMap());
+
+      QTest::newRow("relativeLib")
+          << BuildInfo(root) << QStringList("dep1_test") << QStringList();
+    }
+    {
+      QVariantMap dep1;
+      dep1.insert(
+          "bin_paths", QVariant::fromValue(QList< QVariant >(
+                           {QDir::toNativeSeparators("src/../dep1_test")})));
+      dep1.insert("lib_paths", QVariant::fromValue(QList< QVariant >()));
+
+      QList< QVariant > deps = {dep1};
+
+      QVariantMap root;
+      root.insert("dependencies", deps);
+      root.insert("deps_env_info", QVariantMap());
+
+      QTest::newRow("relativeBin")
+          << BuildInfo(root) << QStringList() << QStringList("dep1_test");
+    }
+    {
+      QVariantMap dep1;
+      dep1.insert("bin_paths", QVariant::fromValue(QList< QVariant >(
+                                   {R"_(src\dep1_test/include)_"})));
+      dep1.insert("lib_paths", QVariant::fromValue(QList< QVariant >()));
+
+      QList< QVariant > deps = {dep1};
+
+      QVariantMap root;
+      root.insert("dependencies", deps);
+      root.insert("deps_env_info", QVariantMap());
+
+      QTest::newRow("mixedPaths")
+          << BuildInfo(root) << QStringList()
+          << QStringList(QDir::toNativeSeparators("src/dep1_test/include"));
+    }
   }
 
   void testDataStructure()

@@ -1,4 +1,5 @@
 #include "BuildInfo.h"
+#include <QDir>
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -81,8 +82,11 @@ QStringList BuildInfo::dependenciesToStringList(const QString key) const
     foreach (const auto& depObj, depList)
     {
       auto variantList = depObj.toMap().value(key).toList();
-      std::for_each(variantList.begin(), variantList.end(),
-          [&result](const auto& el) { result.push_back(el.toString()); });
+      std::for_each(
+          variantList.begin(), variantList.end(), [&result](const auto& el) {
+            result.push_back(QDir::toNativeSeparators(
+                QDir::cleanPath(el.toString().replace("\\", "/"))));
+          });
     }
   }
   return result;
