@@ -118,8 +118,8 @@ jobs:
         file(MAKE_DIRECTORY qt5)
 
         # Save the path for other steps
-        file(TO_CMAKE_PATH "$ENV{GITHUB_WORKSPACE}/qt5/${qt_dir_prefix}" qt_dir)
-        message("::set-output name=qt_dir::${qt_dir}")
+        file(TO_CMAKE_PATH "qt5/${qt_dir_prefix}" qt_dir)
+        file(WRITE "qt5/pathInfo" ${qt_dir})
 
         foreach(package qtbase qtdeclarative qttools qtsvg)
           file(DOWNLOAD
@@ -137,18 +137,6 @@ jobs:
 
           execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvf ../${package}.7z WORKING_DIRECTORY qt5)
         endforeach()
-
-        file(READ "qt5/${qt_dir_prefix}/mkspecs/qconfig.pri" qtconfig)
-        string(REPLACE "Enterprise" "OpenSource" qtconfig "${qtconfig}")
-        string(REPLACE "licheck.exe" "" qtconfig "${qtconfig}")
-        string(REPLACE "licheck64" "" qtconfig "${qtconfig}")
-        string(REPLACE "licheck_mac" "" qtconfig "${qtconfig}")
-        file(WRITE "qt5/${qt_dir_prefix}/mkspecs/qconfig.pri" "${qtconfig}")
-
-        # Create qt.conf with the correct path to the Qt Install dir:
-        configure_file(qt.conf.in ${qt_dir}/bin/qt.conf)
-
-
 
     - name: Download Qt Creator
       if: steps.cache-creator.outputs.cache-hit != 'true'
@@ -169,11 +157,11 @@ jobs:
           set(qtc_binary_name "lib$ENV{PLUGIN_NAME}.dylib")
         endif()
 
-        # Save the path for other steps
-        message("::set-output name=qtc_binary_name::${qtc_binary_name}")
-        message("::set-output name=qtc_output_directory::${qtc_output_directory}")
-
         file(MAKE_DIRECTORY qtcreator)
+
+        # Save the path for other steps
+        file(WRITE "qtcreator/pathInfoBin" ${qtc_binary_name})
+        file(WRITE "qtcreator/pathInfoOut" ${qtc_output_directory})
 
         foreach(package qtcreator qtcreator_dev)
           file(DOWNLOAD
@@ -200,6 +188,30 @@ jobs:
               "$ENV{GITHUB_WORKSPACE}/qtcreator/bin/Qt Creator.app"
           )
         endif()
+
+    - name: restore
+      shell: cmake -P {0}
+      run: |
+        file(READ "qt/pathInfo" qt_dir)
+        file(READ "qtcreator/pathInfoBin" qtc_binary_name)
+        file(READ "qtcreator/pathInfoOut" qtc_output_directory)
+
+        set(absQtDir "$ENV{GITHUB_WORKSPACE}/${qt_dir}")
+
+        message("::set-output name=qt_dir::${absQtDir}")
+        message("::set-output name=qtc_binary_name::${qtc_binary_name}")
+        message("::set-output name=qtc_output_directory::${qtc_output_directory}")
+
+        file(READ "${absQtDir}/mkspecs/qconfig.pri" qtconfig)
+        string(REPLACE "Enterprise" "OpenSource" qtconfig "${qtconfig}")
+        string(REPLACE "licheck.exe" "" qtconfig "${qtconfig}")
+        string(REPLACE "licheck64" "" qtconfig "${qtconfig}")
+        string(REPLACE "licheck_mac" "" qtconfig "${qtconfig}")
+        file(WRITE "${absQtDir}/mkspecs/qconfig.pri" "${qtconfig}")
+
+        # Create qt.conf with the correct path to the Qt Install dir:
+        configure_file(qt.conf.in ${absQtDir}/bin/qt.conf)
+
 
     - name: Build
       shell: cmake -P {0}
