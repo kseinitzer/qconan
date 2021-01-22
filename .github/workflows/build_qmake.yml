@@ -15,8 +15,7 @@ jobs:
         support:
         - {
             creator_version: 4.12.0,
-            qt_version: 5.13.2,
-            not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32"]
+            qt_version: 5.13.2
           }
 
         config:
@@ -36,10 +35,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
 
     - name: Installing system libs
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       shell: cmake -P {0}
       run: |
         if ("${{ runner.os }}" STREQUAL "Linux")
@@ -49,7 +46,6 @@ jobs:
         endif()
 
     - name: Download Qt
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       id: qt
       shell: cmake -P {0}
       run: |
@@ -140,7 +136,6 @@ jobs:
 
 
     - name: Download Qt Creator
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       id: qt_creator
       shell: cmake -P {0}
       run: |
@@ -191,7 +186,6 @@ jobs:
         endif()
 
     - name: Build
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       shell: cmake -P {0}
       run: |
         # configure
@@ -262,7 +256,6 @@ jobs:
 
     - uses: actions/upload-artifact@v1
       id: upload_artifact
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       with:
         path: ./${{ env.PLUGIN_NAME }}-${{matrix.support.creator_version}}-${{ matrix.config.artifact }}
         name: ${{ env.PLUGIN_NAME}}-${{matrix.support.creator_version}}-${{ matrix.config.artifact }}
@@ -303,7 +296,6 @@ jobs:
         support:
         - {
             creator_version: 4.12.0,
-            not_supported_platforms: ["windows_vs2015_64", "windows_vs2015_32"]
           }
 
         config:
@@ -324,26 +316,22 @@ jobs:
     steps:
     - name: Download artifact
       uses: actions/download-artifact@v1
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       with:
         name: ${{ env.PLUGIN_NAME }}-${{matrix.support.creator_version}}-${{ matrix.config.artifact }}
         path: ./
 
     - name: Download URL
       uses: actions/download-artifact@v1
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       with:
         name: upload_url
         path: ./
     - id: set_upload_url
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       run: |
         upload_url=`cat ./upload_url`
         echo ::set-output name=upload_url::$upload_url
 
     - name: Upload to Release
       id: upload_to_release
-      if: contains(matrix.support.not_supported_platforms,matrix.config.platform) == false
       uses: actions/upload-release-asset@v1.0.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
