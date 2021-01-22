@@ -36,6 +36,20 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
+    - name: Cache Qt
+      id: cache-qt
+      uses: actions/cache@v2
+      with:
+        path: qt5
+        key: ${{ runner.os }}-QtCache
+
+    - name: Cache QtCreator
+      id: cache-creator
+      uses: actions/cache@v2
+      with:
+        path: qtcreator
+        key: ${{ runner.os }}-QtCreatorCache
+
     - name: Installing system libs
       shell: cmake -P {0}
       run: |
@@ -46,6 +60,7 @@ jobs:
         endif()
 
     - name: Download Qt
+      if: steps.cache-qt.outputs.cache-hit != 'true'
       id: qt
       shell: cmake -P {0}
       run: |
@@ -136,6 +151,7 @@ jobs:
 
 
     - name: Download Qt Creator
+      if: steps.cache-creator.outputs.cache-hit != 'true'
       id: qt_creator
       shell: cmake -P {0}
       run: |
